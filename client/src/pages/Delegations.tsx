@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { formatDistanceToNow } from 'date-fns';
+import CreateDelegationForm from '../components/CreateDelegationForm';
+import { PROTOCOLS } from '../constants/protocols';
 
 interface Delegation {
   id: string;
@@ -147,7 +149,11 @@ export default function Delegations() {
                 </div>
                 <div>
                   <p className="text-gray-500">Protocols</p>
-                  <p className="font-medium">{delegation.allowedProtocols.join(', ')}</p>
+                  <p className="font-medium">
+                    {delegation.allowedProtocols
+                      .map((p) => PROTOCOLS.find((pr) => pr.id === p)?.name || p)
+                      .join(', ')}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-500">Valid Until</p>
@@ -166,7 +172,7 @@ export default function Delegations() {
               {delegation.limits && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <p className="text-sm font-medium text-gray-700 mb-2">Limits</p>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500">Max Per Trade</p>
                       <p className="font-medium">${delegation.limits.maxPerTrade}</p>
@@ -183,6 +189,10 @@ export default function Delegations() {
                         ${delegation.limits.currentWeeklyVolume} / ${delegation.limits.maxWeeklyVolume}
                       </p>
                     </div>
+                    <div>
+                      <p className="text-gray-500">Max Leverage</p>
+                      <p className="font-medium">{delegation.limits.maxLeverage}x</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -191,26 +201,12 @@ export default function Delegations() {
         </div>
       )}
 
-      {/* Create Modal - Simplified for now */}
+      {/* Create Delegation Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Create Delegation</h2>
-            <p className="text-gray-600 mb-6">
-              Delegation creation requires generating a session key on the client side
-              and encrypting it before sending to the server. This feature requires
-              additional client-side cryptography implementation.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="btn btn-secondary"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateDelegationForm
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => setShowCreateModal(false)}
+        />
       )}
     </div>
   );

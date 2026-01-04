@@ -85,7 +85,7 @@ class ArbitrageService {
         let amountOut: bigint;
 
         if (dex.startsWith('uniswap-v3')) {
-          const fee = parseInt(dex.split('-')[2]);
+          const fee = parseInt(dex.split('-')[2], 10);
           amountOut = await priceOracleService.getUniswapV3Quote(
             chainId,
             tokenA,
@@ -225,7 +225,9 @@ class ArbitrageService {
         return null;
       }
 
-      const profitPercent = (Number(profitBigInt) / Number(amount)) * 100;
+      // Use formatUnits to avoid BigInt to Number precision loss
+      const amountNormalized = Number(formatUnits(amount, tokenADecimals));
+      const profitPercent = (profitNormalized / amountNormalized) * 100;
 
       const opportunity: ArbitrageOpportunity = {
         id: generateId(),

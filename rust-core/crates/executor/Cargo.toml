@@ -1,0 +1,25 @@
+[package]
+name = "defi-executor"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+defi-core = { path = "../core" }
+defi-detector = { path = "../detector" }
+
+tokio = { workspace = true }
+futures = { workspace = true }
+
+alloy = { workspace = true }
+alloy-primitives = { workspace = true }
+revm = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+parking_lot = { workspace = true }
+
+tracing = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }

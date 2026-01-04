@@ -1,0 +1,33 @@
+[package]
+name = "defi-detector"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+defi-core = { path = "../core" }
+defi-price-feed = { path = "../price-feed" }
+
+tokio = { workspace = true }
+futures = { workspace = true }
+
+alloy-primitives = { workspace = true }
+ruint = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+rayon = { workspace = true }
+
+tracing = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "detection"
+harness = false

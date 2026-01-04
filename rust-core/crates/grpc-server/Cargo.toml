@@ -1,0 +1,61 @@
+[package]
+name = "defi-grpc-server"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "gRPC server for DeFi bot - bridges TypeScript and Rust"
+
+[[bin]]
+name = "defi-bot"
+path = "src/main.rs"
+
+[dependencies]
+# Internal crates
+defi-core = { path = "../core" }
+defi-price-feed = { path = "../price-feed" }
+defi-detector = { path = "../detector" }
+defi-executor = { path = "../executor" }
+
+# gRPC
+tonic.workspace = true
+prost.workspace = true
+
+# Async
+tokio.workspace = true
+tokio-stream.workspace = true
+futures.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Logging
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+# Error handling
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Config
+config.workspace = true
+dotenvy.workspace = true
+
+# Time
+chrono.workspace = true
+
+# Concurrency
+parking_lot.workspace = true
+dashmap.workspace = true
+
+# Utilities
+uuid = { version = "1.6", features = ["v4"] }
+alloy-primitives.workspace = true
+http = "0.2"
+
+[build-dependencies]
+tonic-build.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
