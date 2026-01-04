@@ -18,7 +18,7 @@ vi.mock('../config/env.js', () => ({
 }));
 
 // Mock price oracle
-vi.mock('./price-oracle.js', () => ({
+vi.mock('../services/price-oracle.js', () => ({
   priceOracleService: {
     getBestSwapRoute: vi.fn(),
     getMaxPriceImpact: vi.fn().mockReturnValue(0.02),
@@ -27,7 +27,7 @@ vi.mock('./price-oracle.js', () => ({
 }));
 
 // Mock delegation service
-vi.mock('./delegation.js', () => ({
+vi.mock('../services/delegation.js', () => ({
   delegationService: {
     validate: vi.fn().mockResolvedValue({ valid: true }),
     revokeAllForWallet: vi.fn().mockResolvedValue(0),
