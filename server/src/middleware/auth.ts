@@ -1,6 +1,6 @@
 /**
  * Authentication Middleware
- * SIWE (Sign-In With Ethereum) authentication
+ * SIWE (Sign-In With Ethereum) authentication with Redis-backed sessions
  */
 
 import type { Request, Response, NextFunction } from 'express';
@@ -8,6 +8,8 @@ import { SiweMessage } from 'siwe';
 import { db, authNonces, users } from '../db/index.js';
 import { eq, and, gt } from 'drizzle-orm';
 import { generateNonce } from '../services/encryption.js';
+import { redisService, type SessionData } from '../services/redis.js';
+import { structuredLogger } from '../services/logger.js';
 import type { Address } from '../../shared/schema.js';
 
 // Extended Request type with wallet info
@@ -18,6 +20,9 @@ export interface AuthenticatedRequest extends Request {
 
 // Nonce expiration time (5 minutes)
 const NONCE_EXPIRY_MS = 5 * 60 * 1000;
+
+// Session expiration time (24 hours)
+const SESSION_EXPIRY_SECONDS = 24 * 60 * 60;
 
 /**
  * Generate and store a nonce for a wallet address
@@ -43,6 +48,10 @@ export async function createNonce(walletAddress: string): Promise<string> {
       },
     });
 
+  structuredLogger.info('auth', 'Nonce created', {
+    walletAddress: walletAddress.toLowerCase().slice(0, 10) + '...',
+  });
+
   return nonce;
 }
 
@@ -58,6 +67,9 @@ export async function verifySiweSignature(
     const fields = await siweMessage.verify({ signature });
 
     if (!fields.success) {
+      structuredLogger.warning('auth', 'Invalid SIWE signature', {
+        address: siweMessage.address?.slice(0, 10) + '...',
+      });
       return { valid: false, error: 'Invalid signature' };
     }
 
@@ -75,6 +87,9 @@ export async function verifySiweSignature(
       .limit(1);
 
     if (storedNonce.length === 0) {
+      structuredLogger.warning('auth', 'Invalid or expired nonce', {
+        address: siweMessage.address?.slice(0, 10) + '...',
+      });
       return { valid: false, error: 'Invalid or expired nonce' };
     }
 
@@ -83,9 +98,16 @@ export async function verifySiweSignature(
       .delete(authNonces)
       .where(eq(authNonces.walletAddress, siweMessage.address.toLowerCase()));
 
+    structuredLogger.info('auth', 'SIWE verification successful', {
+      address: siweMessage.address?.slice(0, 10) + '...',
+    });
+
     return { valid: true, address: siweMessage.address as Address };
   } catch (error) {
-    console.error('SIWE verification error:', error);
+    structuredLogger.error('auth', 'SIWE verification error', error as Error, {
+      hasMessage: !!message,
+      hasSignature: !!signature,
+    });
     return { valid: false, error: 'Verification failed' };
   }
 }
@@ -122,53 +144,73 @@ export async function getOrCreateUser(walletAddress: Address): Promise<{ id: str
     })
     .returning();
 
+  structuredLogger.info('auth', 'New user created', {
+    userId: newUser[0].id,
+    walletAddress: normalizedAddress.slice(0, 10) + '...',
+  });
+
   return { id: newUser[0].id, walletAddress: newUser[0].walletAddress };
 }
 
 /**
- * In-memory session store (use Redis in production)
- * Maps session token to user data
- */
-const sessions = new Map<string, { userId: string; walletAddress: Address; expiresAt: Date }>();
-
-// Session expiration time (24 hours)
-const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000;
-
-/**
  * Create a session for an authenticated user
+ * Stores session in Redis for persistence across server restarts
  */
-export function createSession(userId: string, walletAddress: Address): string {
+export async function createSession(userId: string, walletAddress: Address): Promise<string> {
   const token = generateNonce();
-  const expiresAt = new Date(Date.now() + SESSION_EXPIRY_MS);
+  const now = Date.now();
 
-  sessions.set(token, { userId, walletAddress, expiresAt });
+  const sessionData: SessionData = {
+    userId,
+    walletAddress,
+    expiresAt: now + SESSION_EXPIRY_SECONDS * 1000,
+    createdAt: now,
+  };
+
+  await redisService.setSession(token, sessionData, SESSION_EXPIRY_SECONDS);
+
+  structuredLogger.info('auth', 'Session created', {
+    userId,
+    walletAddress: walletAddress.slice(0, 10) + '...',
+    expiresIn: SESSION_EXPIRY_SECONDS,
+  });
 
   return token;
 }
 
 /**
- * Validate session token
+ * Validate session token against Redis store
  */
-export function validateSession(token: string): { valid: boolean; userId?: string; walletAddress?: Address } {
-  const session = sessions.get(token);
+export async function validateSession(token: string): Promise<{ valid: boolean; userId?: string; walletAddress?: Address }> {
+  try {
+    const session = await redisService.getSession(token);
 
-  if (!session) {
+    if (!session) {
+      return { valid: false };
+    }
+
+    if (session.expiresAt < Date.now()) {
+      await redisService.deleteSession(token);
+      return { valid: false };
+    }
+
+    return {
+      valid: true,
+      userId: session.userId,
+      walletAddress: session.walletAddress as Address,
+    };
+  } catch (error) {
+    structuredLogger.error('auth', 'Session validation error', error as Error);
     return { valid: false };
   }
-
-  if (session.expiresAt < new Date()) {
-    sessions.delete(token);
-    return { valid: false };
-  }
-
-  return { valid: true, userId: session.userId, walletAddress: session.walletAddress };
 }
 
 /**
- * Delete session
+ * Delete session from Redis
  */
-export function deleteSession(token: string): void {
-  sessions.delete(token);
+export async function deleteSession(token: string): Promise<void> {
+  await redisService.deleteSession(token);
+  structuredLogger.info('auth', 'Session deleted');
 }
 
 /**
@@ -192,22 +234,33 @@ export function authMiddleware(
   }
 
   const token = authHeader.slice(7);
-  const session = validateSession(token);
 
-  if (!session.valid || !session.userId || !session.walletAddress) {
-    res.status(401).json({
-      success: false,
-      error: 'Invalid or expired session',
-      timestamp: Date.now(),
+  // Use async validation
+  validateSession(token)
+    .then((session) => {
+      if (!session.valid || !session.userId || !session.walletAddress) {
+        res.status(401).json({
+          success: false,
+          error: 'Invalid or expired session',
+          timestamp: Date.now(),
+        });
+        return;
+      }
+
+      // Attach user info to request
+      (req as AuthenticatedRequest).userId = session.userId;
+      (req as AuthenticatedRequest).walletAddress = session.walletAddress;
+
+      next();
+    })
+    .catch((error) => {
+      structuredLogger.error('auth', 'Auth middleware error', error as Error);
+      res.status(500).json({
+        success: false,
+        error: 'Authentication error',
+        timestamp: Date.now(),
+      });
     });
-    return;
-  }
-
-  // Attach user info to request
-  (req as AuthenticatedRequest).userId = session.userId;
-  (req as AuthenticatedRequest).walletAddress = session.walletAddress;
-
-  next();
 }
 
 /**
@@ -222,28 +275,19 @@ export function optionalAuthMiddleware(
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
-    const session = validateSession(token);
 
-    if (session.valid && session.userId && session.walletAddress) {
-      (req as AuthenticatedRequest).userId = session.userId;
-      (req as AuthenticatedRequest).walletAddress = session.walletAddress;
-    }
-  }
-
-  next();
-}
-
-/**
- * Cleanup expired sessions (run periodically)
- */
-export function cleanupSessions(): void {
-  const now = new Date();
-  for (const [token, session] of sessions.entries()) {
-    if (session.expiresAt < now) {
-      sessions.delete(token);
-    }
+    validateSession(token)
+      .then((session) => {
+        if (session.valid && session.userId && session.walletAddress) {
+          (req as AuthenticatedRequest).userId = session.userId;
+          (req as AuthenticatedRequest).walletAddress = session.walletAddress;
+        }
+        next();
+      })
+      .catch(() => {
+        next();
+      });
+  } else {
+    next();
   }
 }
-
-// Run cleanup every hour
-setInterval(cleanupSessions, 60 * 60 * 1000);
