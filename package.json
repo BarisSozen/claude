@@ -1,0 +1,17 @@
+{
+  "name": "error-logger",
+  "version": "1.0.0",
+  "description": "Structured error logging for multi-service trading infrastructure",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "keywords": ["logging", "error-handling", "trading", "correlation-id"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0"
+  }
+}
