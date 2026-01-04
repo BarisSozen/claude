@@ -100,6 +100,12 @@ export const executorConfigSchema = z.object({
   enabledStrategies: z.array(z.string()).optional(),
 });
 
+// Execute opportunity schema
+export const executeOpportunitySchema = z.object({
+  delegationId: z.string().uuid('Invalid delegation ID'),
+  opportunityId: z.string().min(1, 'Opportunity ID is required'),
+});
+
 // Type exports
 export type CreateDelegationInput = z.infer<typeof createDelegationSchema>;
 export type UpdateDelegationInput = z.infer<typeof updateDelegationSchema>;
@@ -110,6 +116,7 @@ export type PaginationInput = z.infer<typeof paginationSchema>;
 export type TradeHistoryQuery = z.infer<typeof tradeHistoryQuerySchema>;
 export type OpportunityQuery = z.infer<typeof opportunityQuerySchema>;
 export type ExecutorConfigInput = z.infer<typeof executorConfigSchema>;
+export type ExecuteOpportunityInput = z.infer<typeof executeOpportunitySchema>;
 
 /**
  * Validation middleware factory

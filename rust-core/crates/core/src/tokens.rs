@@ -53,7 +53,7 @@ pub static TOKENS: LazyLock<HashMap<ChainId, HashMap<&'static str, Token>>> = La
         "USDT", "Tether USD", 6, ChainId::Ethereum  // ⚠️ 6 decimals!
     ));
     eth_tokens.insert("DAI", Token::new(
-        "0x6B175474E89094C44Da98b954EesAC495271d0F".parse().unwrap(),
+        "0x6B175474E89094C44Da98b954EedeAC495271d0F".parse().unwrap(),
         "DAI", "Dai Stablecoin", 18, ChainId::Ethereum
     ));
     eth_tokens.insert("WBTC", Token::new(

@@ -101,7 +101,7 @@ export const TOKENS: Record<ChainId, Token[]> = {
       chains: ['ethereum'],
     },
     {
-      address: '0x6B175474E89094C44Da98b954EesAC495271d0F',
+      address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
       symbol: 'DAI',
       name: 'Dai Stablecoin',
       decimals: 18,
