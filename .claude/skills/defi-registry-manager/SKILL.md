@@ -1,16 +1,17 @@
 ---
 name: defi-registry-manager
-description: Manages expansion of tokens, pools, chains, and DEXes across the codebase. Use when adding new tokens, protocols, chains, or updating existing DeFi registry data. Triggers on add token, new coin, add protocol, new DEX, add chain, new network, update address.
+description: Manages expansion of tokens, pools, chains, networks, and DEXes across the codebase. Use when adding new tokens, protocols, chains, networks, or updating existing DeFi registry data. Triggers on add token, new coin, add protocol, new DEX, add chain, new network, add RPC, update address.
 ---
 
 # DeFi Registry Manager
 
-Manages expansion of tokens, pools, chains, and DEXes across the codebase. Use when adding new tokens, protocols, chains, or updating existing DeFi registry data.
+Manages expansion of tokens, pools, chains, networks, and DEXes across the codebase. Use when adding new tokens, protocols, chains, networks, or updating existing DeFi registry data.
 
 ## Trigger Phrases
 - "add token", "new token", "add coin"
 - "add protocol", "new DEX", "add exchange"
 - "add chain", "new network", "support chain"
+- "add network", "new RPC", "configure network"
 - "update address", "fix token address"
 
 ## Registry Locations
@@ -40,6 +41,25 @@ Manages expansion of tokens, pools, chains, and DEXes across the codebase. Use w
 | `rust-core/crates/core/src/lib.rs` | `ChainId` enum |
 | `server/src/config/env.ts` | RPC URLs per chain |
 | `shared/schema.ts` | `ChainId` type |
+| `server/src/db/schema.ts` | `adminChains` table (Admin UI) |
+
+### Networks (RPC/Infrastructure):
+
+| File | Purpose |
+|------|---------|
+| `server/src/config/env.ts` | Primary RPC URLs, WebSocket endpoints |
+| `server/src/db/schema.ts` | `adminChains` table with `rpcUrl`, `explorerUrl` |
+| `rust-core/crates/core/src/lib.rs` | Network constants, block times |
+| `server/src/services/trade-executor.ts` | Chain-specific gas settings |
+
+### Admin UI Database Tables:
+
+| Table | Purpose |
+|-------|---------|
+| `adminTokens` | Dynamic token registry via Admin UI |
+| `adminProtocols` | Dynamic protocol/DEX registry via Admin UI |
+| `adminChains` | Dynamic chain/network config via Admin UI |
+| `strategies` | Trading strategy configurations |
 
 ## Adding a New Token - Checklist
 
@@ -99,6 +119,57 @@ tokens.insert("TOKEN", Token::new(
 [ ] 5. Add chain config to server/src/services/trade-executor.ts
 [ ] 6. Add tokens for new chain in all token files
 [ ] 7. Add protocol addresses for new chain
+[ ] 8. (Optional) Add to adminChains via Admin UI for dynamic config
+```
+
+## Adding/Configuring a Network - Checklist
+
+```
+[ ] 1. Obtain reliable RPC endpoint (Alchemy, Infura, QuickNode, or self-hosted)
+[ ] 2. Add environment variable to server/src/config/env.ts
+     - HTTP RPC: {CHAIN}_RPC_URL
+     - WebSocket: {CHAIN}_WS_URL (if needed for subscriptions)
+[ ] 3. Configure rate limits and fallback RPCs if available
+[ ] 4. Add network parameters to rust-core/crates/core/src/lib.rs:
+     - Block time (for timing estimates)
+     - Gas token decimals
+     - EIP-1559 support flag
+[ ] 5. Configure gas settings in server/src/services/trade-executor.ts:
+     - Base fee multiplier
+     - Priority fee defaults
+     - Gas limit overrides
+[ ] 6. Add explorer URL for transaction links
+[ ] 7. Test connectivity: curl -X POST {RPC_URL} -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+[ ] 8. Add to Admin UI via /admin -> Chains tab for dynamic updates
+```
+
+## Network Configuration Template
+
+```typescript
+// Environment (.env)
+ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+ETHEREUM_WS_URL=wss://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+ARBITRUM_RPC_URL=https://arb-mainnet.g.alchemy.com/v2/YOUR_KEY
+
+// server/src/config/env.ts
+ethereum: {
+  rpcUrl: process.env.ETHEREUM_RPC_URL,
+  wsUrl: process.env.ETHEREUM_WS_URL,
+  chainId: 1,
+  blockTime: 12, // seconds
+  supportsEip1559: true,
+}
+
+// Admin UI (adminChains table)
+{
+  id: 'ethereum',
+  name: 'Ethereum Mainnet',
+  chainIdNumeric: 1,
+  rpcUrl: 'https://...',
+  explorerUrl: 'https://etherscan.io',
+  nativeToken: 'ETH',
+  enabled: true,
+}
 ```
 
 ## Common Token Addresses (Ethereum Mainnet)
@@ -127,6 +198,18 @@ grep -ri "0xA0b86991" --include="*.ts" --include="*.rs"
 grep -ri "0x6B175474E89094C44Da98b954" --include="*.ts" --include="*.rs"
 ```
 
+## Common Networks
+
+| Network | Chain ID | Block Time | Native Token | EIP-1559 |
+|---------|----------|------------|--------------|----------|
+| Ethereum | 1 | 12s | ETH | Yes |
+| Arbitrum One | 42161 | 0.25s | ETH | Yes |
+| Base | 8453 | 2s | ETH | Yes |
+| Polygon | 137 | 2s | MATIC | Yes |
+| Optimism | 10 | 2s | ETH | Yes |
+| Avalanche | 43114 | 2s | AVAX | Yes |
+| BSC | 56 | 3s | BNB | No |
+
 ## Critical Rules
 
 1. **ALWAYS verify decimals** - Wrong decimals = catastrophic bugs
@@ -134,3 +217,6 @@ grep -ri "0x6B175474E89094C44Da98b954" --include="*.ts" --include="*.rs"
 3. **Update ALL files** - Partial updates cause runtime errors
 4. **Test after changes** - Run build for both client and Rust core
 5. **Lowercase in TOKEN_SYMBOLS** - Keys must be lowercase addresses
+6. **Test RPC connectivity** - Verify endpoint before deploying
+7. **Use fallback RPCs** - Primary + backup for reliability
+8. **Monitor rate limits** - Stay within provider quotas
