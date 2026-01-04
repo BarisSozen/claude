@@ -213,7 +213,7 @@ impl DefiService for DefiServiceImpl {
                     opp.profit_usd >= req.min_profit_usd
                         && opp.confidence >= req.min_confidence
                 })
-                .take(req.limit.max(100) as usize)
+                .take(req.limit.min(100) as usize)
                 .map(|opp| opportunity_to_proto(&opp))
                 .collect();
 
@@ -338,7 +338,20 @@ impl DefiService for DefiServiceImpl {
         request: Request<ExecuteTradeRequest>,
     ) -> Result<Response<ExecuteTradeResponse>, Status> {
         let req = request.into_inner();
-        let _chain: ChainId = req.chain.into();
+        let chain: ChainId = req.chain.into();
+        let trade_id = uuid::Uuid::new_v4().to_string();
+
+        // Audit log: trade execution request
+        info!(
+            target: "audit",
+            event = "TRADE_EXECUTE_REQUEST",
+            trade_id = %trade_id,
+            delegation_id = %req.delegation_id,
+            chain = ?chain,
+            dex = req.dex,
+            amount_in = %req.amount_in,
+            "Trade execution requested"
+        );
 
         // In production:
         // 1. Verify delegation is valid
@@ -346,13 +359,22 @@ impl DefiService for DefiServiceImpl {
         // 3. Simulate
         // 4. Submit via mempool or Flashbots
 
-        let trade_id = uuid::Uuid::new_v4().to_string();
-
         // Update stats
         {
             let mut state = self.state.write();
             state.trades_executed += 1;
         }
+
+        // Audit log: trade execution outcome
+        info!(
+            target: "audit",
+            event = "TRADE_EXECUTE_RESULT",
+            trade_id = %trade_id,
+            delegation_id = %req.delegation_id,
+            outcome = "success",
+            status = "pending",
+            "Trade execution submitted"
+        );
 
         Ok(Response::new(ExecuteTradeResponse {
             success: true,
@@ -426,12 +448,15 @@ impl DefiService for DefiServiceImpl {
     ) -> Result<Response<UpdateConfigResponse>, Status> {
         let req = request.into_inner();
 
-        // Log config update without exposing full request details
+        // Audit log: config update with outcome
         info!(
-            "Config update requested: scan_interval={:?}, min_profit={:?}, chains_count={}",
-            req.scan_interval_ms,
-            req.min_profit_usd,
-            req.enabled_chains.len()
+            target: "audit",
+            event = "CONFIG_UPDATE",
+            scan_interval_ms = ?req.scan_interval_ms,
+            min_profit_usd = ?req.min_profit_usd,
+            chains_count = req.enabled_chains.len(),
+            outcome = "success",
+            "Configuration updated"
         );
 
         // In production, apply config changes to scanner/aggregator
@@ -478,7 +503,14 @@ impl DefiService for DefiServiceImpl {
         let (shutdown_tx, _shutdown_rx) = oneshot::channel();
         state.scanner_shutdown = Some(shutdown_tx);
 
-        info!("Scanner started");
+        // Audit log: scanner started
+        info!(
+            target: "audit",
+            event = "SCANNER_START",
+            chains_count = scanner_config.enabled_chains.len(),
+            outcome = "success",
+            "Arbitrage scanner started"
+        );
 
         Ok(Response::new(StartScannerResponse {
             success: true,
@@ -492,13 +524,22 @@ impl DefiService for DefiServiceImpl {
     ) -> Result<Response<StopScannerResponse>, Status> {
         let mut state = self.state.write();
 
+        let was_running = state.scanner.is_some();
+
         if let Some(shutdown) = state.scanner_shutdown.take() {
             let _ = shutdown.send(());
         }
 
         state.scanner = None;
 
-        info!("Scanner stopped");
+        // Audit log: scanner stopped
+        info!(
+            target: "audit",
+            event = "SCANNER_STOP",
+            was_running = was_running,
+            outcome = "success",
+            "Arbitrage scanner stopped"
+        );
 
         Ok(Response::new(StopScannerResponse {
             success: true,
