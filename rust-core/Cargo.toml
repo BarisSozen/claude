@@ -1,0 +1,85 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/price-feed",
+    "crates/detector",
+    "crates/executor",
+    "crates/grpc-server",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["DeFi Bot Team"]
+license = "MIT"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full", "tracing"] }
+tokio-stream = "0.1"
+futures = "0.3"
+
+# Ethereum
+alloy = { version = "0.1", features = ["full"] }
+alloy-primitives = "0.7"
+alloy-sol-types = "0.7"
+revm = { version = "8.0", features = ["std", "serde"] }
+
+# Math
+ruint = { version = "1.12", features = ["serde"] }
+num-traits = "0.2"
+rust_decimal = "1.33"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# gRPC
+tonic = "0.11"
+prost = "0.12"
+tonic-build = "0.11"
+
+# WebSocket
+tokio-tungstenite = { version = "0.21", features = ["native-tls"] }
+futures-util = "0.3"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
+# Concurrency
+dashmap = "5.5"
+crossbeam = "0.8"
+rayon = "1.8"
+parking_lot = "0.12"
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Config
+config = "0.14"
+dotenvy = "0.15"
+
+# Testing
+criterion = "0.5"
+proptest = "1.4"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = false

@@ -1,0 +1,287 @@
+syntax = "proto3";
+
+package defi;
+
+// DeFi Bot gRPC Service
+// Enables TypeScript backend to communicate with Rust low-latency core
+
+service DefiService {
+    // Price feed operations
+    rpc GetPrice(GetPriceRequest) returns (GetPriceResponse);
+    rpc StreamPrices(StreamPricesRequest) returns (stream PriceUpdate);
+
+    // Arbitrage detection
+    rpc GetOpportunities(GetOpportunitiesRequest) returns (GetOpportunitiesResponse);
+    rpc StreamOpportunities(StreamOpportunitiesRequest) returns (stream ArbitrageOpportunity);
+
+    // Trade simulation
+    rpc SimulateTrade(SimulateTradeRequest) returns (SimulateTradeResponse);
+    rpc SimulateRoute(SimulateRouteRequest) returns (SimulateRouteResponse);
+
+    // Trade execution
+    rpc ExecuteTrade(ExecuteTradeRequest) returns (ExecuteTradeResponse);
+    rpc GetTradeStatus(GetTradeStatusRequest) returns (GetTradeStatusResponse);
+
+    // System management
+    rpc GetSystemStatus(GetSystemStatusRequest) returns (GetSystemStatusResponse);
+    rpc UpdateConfig(UpdateConfigRequest) returns (UpdateConfigResponse);
+    rpc StartScanner(StartScannerRequest) returns (StartScannerResponse);
+    rpc StopScanner(StopScannerRequest) returns (StopScannerResponse);
+}
+
+// Common types
+enum Chain {
+    CHAIN_UNKNOWN = 0;
+    CHAIN_ETHEREUM = 1;
+    CHAIN_ARBITRUM = 2;
+    CHAIN_BASE = 3;
+    CHAIN_POLYGON = 4;
+}
+
+enum DexProtocol {
+    DEX_UNKNOWN = 0;
+    DEX_UNISWAP_V2 = 1;
+    DEX_UNISWAP_V3 = 2;
+    DEX_SUSHISWAP = 3;
+    DEX_CURVE = 4;
+    DEX_BALANCER = 5;
+    DEX_AAVE_V3 = 6;
+}
+
+message Token {
+    string address = 1;
+    string symbol = 2;
+    uint32 decimals = 3;
+    Chain chain = 4;
+}
+
+message TokenAmount {
+    Token token = 1;
+    string amount = 2;  // Wei string to avoid precision loss
+    double amount_usd = 3;
+}
+
+// Price operations
+message GetPriceRequest {
+    string token_address = 1;
+    Chain chain = 2;
+}
+
+message GetPriceResponse {
+    bool success = 1;
+    double price_usd = 2;
+    uint64 timestamp_ms = 3;
+    string source = 4;
+    string error = 5;
+}
+
+message StreamPricesRequest {
+    repeated string token_addresses = 1;
+    Chain chain = 2;
+}
+
+message PriceUpdate {
+    string token_address = 1;
+    Chain chain = 2;
+    double price_usd = 3;
+    uint64 timestamp_ms = 4;
+    string source = 5;
+}
+
+// Opportunity operations
+message GetOpportunitiesRequest {
+    repeated Chain chains = 1;
+    double min_profit_usd = 2;
+    double min_confidence = 3;
+    int32 limit = 4;
+}
+
+message GetOpportunitiesResponse {
+    bool success = 1;
+    repeated ArbitrageOpportunity opportunities = 2;
+    uint64 scan_duration_us = 3;
+    string error = 4;
+}
+
+message StreamOpportunitiesRequest {
+    repeated Chain chains = 1;
+    double min_profit_usd = 2;
+    double min_confidence = 3;
+}
+
+message ArbitrageOpportunity {
+    string id = 1;
+    Chain chain = 2;
+    string token_pair = 3;
+    repeated SwapStep route = 4;
+    TokenAmount input_amount = 5;
+    TokenAmount output_amount = 6;
+    double profit_usd = 7;
+    double profit_bps = 8;
+    double confidence = 9;
+    uint64 gas_estimate = 10;
+    double gas_cost_usd = 11;
+    uint64 expires_at_ms = 12;
+    uint64 detected_at_ms = 13;
+}
+
+message SwapStep {
+    DexProtocol dex = 1;
+    string pool_address = 2;
+    Token token_in = 3;
+    Token token_out = 4;
+    string amount_in = 5;
+    string amount_out = 6;
+    double price_impact_bps = 7;
+}
+
+// Simulation operations
+message SimulateTradeRequest {
+    Chain chain = 1;
+    string delegation_id = 2;
+    DexProtocol protocol = 3;
+    string token_in = 4;
+    string token_out = 5;
+    string amount_in = 6;
+    string min_amount_out = 7;
+    uint32 slippage_bps = 8;
+}
+
+message SimulateTradeResponse {
+    bool success = 1;
+    bool would_succeed = 2;
+    string expected_output = 3;
+    double expected_output_usd = 4;
+    double price_impact_bps = 5;
+    uint64 gas_estimate = 6;
+    double gas_cost_usd = 7;
+    string error = 8;
+    string revert_reason = 9;
+}
+
+message SimulateRouteRequest {
+    Chain chain = 1;
+    repeated SwapStep route = 2;
+    string input_amount = 3;
+}
+
+message SimulateRouteResponse {
+    bool success = 1;
+    bool would_succeed = 2;
+    string final_output = 3;
+    double total_price_impact_bps = 4;
+    uint64 total_gas_estimate = 5;
+    repeated StepResult step_results = 6;
+    string error = 7;
+}
+
+message StepResult {
+    uint32 step_index = 1;
+    bool success = 2;
+    string output_amount = 3;
+    uint64 gas_used = 4;
+    string error = 5;
+}
+
+// Execution operations
+message ExecuteTradeRequest {
+    Chain chain = 1;
+    string delegation_id = 2;
+    string opportunity_id = 3;  // Optional: use detected opportunity
+    DexProtocol protocol = 4;
+    string token_in = 5;
+    string token_out = 6;
+    string amount_in = 7;
+    string min_amount_out = 8;
+    uint32 slippage_bps = 9;
+    uint64 deadline_ms = 10;
+    bool use_flashbots = 11;
+}
+
+message ExecuteTradeResponse {
+    bool success = 1;
+    string tx_hash = 2;
+    string trade_id = 3;
+    ExecutionStatus status = 4;
+    string error = 5;
+}
+
+enum ExecutionStatus {
+    EXECUTION_UNKNOWN = 0;
+    EXECUTION_PENDING = 1;
+    EXECUTION_SUBMITTED = 2;
+    EXECUTION_CONFIRMED = 3;
+    EXECUTION_FAILED = 4;
+    EXECUTION_REVERTED = 5;
+}
+
+message GetTradeStatusRequest {
+    string trade_id = 1;
+}
+
+message GetTradeStatusResponse {
+    bool success = 1;
+    string trade_id = 2;
+    ExecutionStatus status = 3;
+    string tx_hash = 4;
+    uint64 block_number = 5;
+    uint64 gas_used = 6;
+    string actual_output = 7;
+    double actual_profit_usd = 8;
+    string error = 9;
+}
+
+// System management
+message GetSystemStatusRequest {}
+
+message GetSystemStatusResponse {
+    bool success = 1;
+    bool scanner_running = 2;
+    uint64 uptime_seconds = 3;
+    uint32 active_feeds = 4;
+    uint32 tracked_pools = 5;
+    uint32 tracked_tokens = 6;
+    uint64 opportunities_found = 7;
+    uint64 trades_executed = 8;
+    double total_profit_usd = 9;
+    uint64 last_scan_duration_us = 10;
+    repeated ChainStatus chain_statuses = 11;
+}
+
+message ChainStatus {
+    Chain chain = 1;
+    bool connected = 2;
+    uint64 last_block = 3;
+    uint32 pool_count = 4;
+    uint64 last_update_ms = 5;
+}
+
+message UpdateConfigRequest {
+    optional uint64 scan_interval_ms = 1;
+    optional double min_profit_usd = 2;
+    optional double min_confidence = 3;
+    optional double max_gas_gwei = 4;
+    repeated Chain enabled_chains = 5;
+    repeated DexProtocol enabled_dexes = 6;
+}
+
+message UpdateConfigResponse {
+    bool success = 1;
+    string error = 2;
+}
+
+message StartScannerRequest {
+    repeated Chain chains = 1;
+}
+
+message StartScannerResponse {
+    bool success = 1;
+    string error = 2;
+}
+
+message StopScannerRequest {}
+
+message StopScannerResponse {
+    bool success = 1;
+    string error = 2;
+}

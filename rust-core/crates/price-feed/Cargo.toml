@@ -1,0 +1,31 @@
+[package]
+name = "defi-price-feed"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+defi-core = { path = "../core" }
+
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures = { workspace = true }
+futures-util = { workspace = true }
+
+alloy-primitives = { workspace = true }
+alloy = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+dashmap = { workspace = true }
+parking_lot = { workspace = true }
+crossbeam = { workspace = true }
+
+tracing = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
