@@ -9,8 +9,10 @@
 
 import * as grpc from '@grpc/grpc-js';
 import * as protoLoader from '@grpc/proto-loader';
+import * as fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
+import { config } from '../config/env.js';
 
 // Load proto definition
 const PROTO_PATH = path.resolve(__dirname, '../../../rust-core/proto/defi.proto');
@@ -181,10 +183,37 @@ export class RustCoreClient extends EventEmitter {
   private reconnectDelay: number = 1000;
 
   constructor(
-    private host: string = 'localhost',
-    private port: number = 50051
+    private host: string = config.grpc.host,
+    private port: number = config.grpc.port
   ) {
     super();
+  }
+
+  /**
+   * Create gRPC credentials based on configuration
+   * Uses TLS in production when GRPC_USE_TLS=true
+   */
+  private createCredentials(): grpc.ChannelCredentials {
+    if (!config.grpc.useTls) {
+      // Development mode - warn but allow insecure
+      if (config.server.nodeEnv === 'production') {
+        console.warn('[SECURITY] gRPC using insecure credentials in production!');
+      }
+      return grpc.credentials.createInsecure();
+    }
+
+    // Production TLS configuration
+    const caCert = config.grpc.caCertPath
+      ? fs.readFileSync(config.grpc.caCertPath)
+      : undefined;
+    const clientCert = config.grpc.clientCertPath
+      ? fs.readFileSync(config.grpc.clientCertPath)
+      : undefined;
+    const clientKey = config.grpc.clientKeyPath
+      ? fs.readFileSync(config.grpc.clientKeyPath)
+      : undefined;
+
+    return grpc.credentials.createSsl(caCert, clientKey, clientCert);
   }
 
   /**
@@ -196,7 +225,7 @@ export class RustCoreClient extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.client = new DefiService(
         address,
-        grpc.credentials.createInsecure(),
+        this.createCredentials(),
         {
           'grpc.keepalive_time_ms': 60000,
           'grpc.keepalive_timeout_ms': 20000,
@@ -217,7 +246,7 @@ export class RustCoreClient extends EventEmitter {
           this.connected = true;
           this.reconnectAttempts = 0;
           this.emit('connected');
-          console.log(`Connected to Rust core at ${address}`);
+          console.log(`Connected to Rust core at ${address} (TLS: ${config.grpc.useTls})`);
           resolve();
         }
       });

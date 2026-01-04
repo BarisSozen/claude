@@ -31,7 +31,7 @@ const TOKENS: Record<string, Token> = {
     decimals: 6,
   },
   DAI: {
-    address: '0x6B175474E89094C44Da98b954EesEcdB58f4D31eb',
+    address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
     symbol: 'DAI',
     decimals: 18,
   },

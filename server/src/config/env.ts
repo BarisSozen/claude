@@ -46,6 +46,14 @@ const envSchema = z.object({
 
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+
+  // gRPC (Rust core connection)
+  GRPC_HOST: z.string().default('localhost'),
+  GRPC_PORT: z.string().default('50051'),
+  GRPC_USE_TLS: z.string().default('false'),
+  GRPC_CA_CERT_PATH: z.string().optional(),
+  GRPC_CLIENT_CERT_PATH: z.string().optional(),
+  GRPC_CLIENT_KEY_PATH: z.string().optional(),
 });
 
 // Parse and validate environment
@@ -112,5 +120,13 @@ export const config = {
     minProfitUsd: parseFloat(env.MIN_PROFIT_USD),
     scanIntervalMs: parseInt(env.SCAN_INTERVAL_MS, 10),
     maxDailyTrades: parseInt(env.MAX_DAILY_TRADES, 10),
+  },
+  grpc: {
+    host: env.GRPC_HOST,
+    port: parseInt(env.GRPC_PORT, 10),
+    useTls: env.GRPC_USE_TLS === 'true',
+    caCertPath: env.GRPC_CA_CERT_PATH,
+    clientCertPath: env.GRPC_CLIENT_CERT_PATH,
+    clientKeyPath: env.GRPC_CLIENT_KEY_PATH,
   },
 } as const;

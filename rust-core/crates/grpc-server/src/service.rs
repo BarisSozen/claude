@@ -426,7 +426,13 @@ impl DefiService for DefiServiceImpl {
     ) -> Result<Response<UpdateConfigResponse>, Status> {
         let req = request.into_inner();
 
-        info!("Config update requested: {:?}", req);
+        // Log config update without exposing full request details
+        info!(
+            "Config update requested: scan_interval={:?}, min_profit={:?}, chains_count={}",
+            req.scan_interval_ms,
+            req.min_profit_usd,
+            req.enabled_chains.len()
+        );
 
         // In production, apply config changes to scanner/aggregator
         Ok(Response::new(UpdateConfigResponse {
