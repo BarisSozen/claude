@@ -8,3 +8,5 @@ export { default as tradeRoutes } from './trades.js';
 export { default as opportunityRoutes } from './opportunities.js';
 export { default as executorRoutes } from './executor.js';
 export { default as walletRoutes } from './wallet.js';
+export { default as strategyRoutes } from './strategies.js';
+export { default as adminRoutes } from './admin.js';

@@ -8,6 +8,8 @@ const navItems = [
   { path: '/delegations', label: 'Delegations', icon: '🔐' },
   { path: '/opportunities', label: 'Opportunities', icon: '💰' },
   { path: '/trades', label: 'Trades', icon: '📈' },
+  { path: '/performance', label: 'Performance', icon: '📉' },
+  { path: '/admin', label: 'Admin', icon: '🛠️' },
   { path: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
