@@ -46,6 +46,8 @@ export default function CreateDelegationForm({
   const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
   const [selectedTokens, setSelectedTokens] = useState<string[]>([]);
   const [validityDays, setValidityDays] = useState('30');
+  const [customValidity, setCustomValidity] = useState('');
+  const [isCustomValidity, setIsCustomValidity] = useState(false);
 
   // Limits
   const [maxPerTrade, setMaxPerTrade] = useState('1000');
@@ -357,17 +359,56 @@ export default function CreateDelegationForm({
       {/* Validity Period */}
       <div>
         <label className="label">Validity Period</label>
-        <select
-          value={validityDays}
-          onChange={(e) => setValidityDays(e.target.value)}
-          className="input"
-        >
-          <option value="7">7 days</option>
-          <option value="14">14 days</option>
-          <option value="30">30 days</option>
-          <option value="60">60 days</option>
-          <option value="90">90 days</option>
-        </select>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { value: '30', label: '30 days' },
+            { value: '180', label: '180 days' },
+            { value: '365', label: '1 year' },
+            { value: 'custom', label: 'Custom' },
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                if (option.value === 'custom') {
+                  setIsCustomValidity(true);
+                  setValidityDays(customValidity || '30');
+                } else {
+                  setIsCustomValidity(false);
+                  setValidityDays(option.value);
+                }
+              }}
+              className={`p-3 rounded-lg border-2 transition-colors ${
+                (option.value === 'custom' && isCustomValidity) ||
+                (option.value !== 'custom' && !isCustomValidity && validityDays === option.value)
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {isCustomValidity && (
+          <div className="mt-3">
+            <label className="text-sm text-gray-600">Custom duration (days)</label>
+            <input
+              type="number"
+              value={customValidity}
+              onChange={(e) => {
+                setCustomValidity(e.target.value);
+                setValidityDays(e.target.value);
+              }}
+              placeholder="Enter number of days"
+              className="input mt-1"
+              min="1"
+              max="730"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Maximum 730 days (2 years)
+            </p>
+          </div>
+        )}
       </div>
 
       {error && (
