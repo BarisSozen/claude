@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: defi-bot-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: defi_bot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: defi-bot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Server
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: defi-bot-server
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/defi_bot
+      REDIS_URL: redis://redis:6379
+      ETH_RPC_URL: ${ETH_RPC_URL}
+      ARBITRUM_RPC_URL: ${ARBITRUM_RPC_URL}
+      BASE_RPC_URL: ${BASE_RPC_URL}
+      POLYGON_RPC_URL: ${POLYGON_RPC_URL}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Client
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: defi-bot-client
+    ports:
+      - "5173:80"
+    environment:
+      VITE_WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID}
+    depends_on:
+      - server
+
+  # TimescaleDB for time-series data (optional, use in production)
+  # timescaledb:
+  #   image: timescale/timescaledb:latest-pg16
+  #   container_name: defi-bot-timescale
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: defi_bot_timeseries
+  #   ports:
+  #     - "5433:5432"
+  #   volumes:
+  #     - timescale_data:/var/lib/postgresql/data
+
+  # Grafana for monitoring (optional)
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: defi-bot-grafana
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     GF_SECURITY_ADMIN_PASSWORD: admin
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+
+volumes:
+  postgres_data:
+  redis_data:
+  # timescale_data:
+  # grafana_data:
