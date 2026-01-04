@@ -27,15 +27,18 @@ Based on changed files, invoke these skills:
 
 | Changed Files | Skills to Invoke |
 |--------------|------------------|
-| Any `.ts`, `.tsx` | code-review-expert |
+| Any `.ts`, `.tsx` | code-review-expert, common-pitfalls |
 | `server/src/routes/*` | system-integration-validator |
 | `server/src/services/*` | defi-expert, hft-quant-expert |
 | `server/src/db/*` | code-consistency-validator |
-| `client/src/pages/*`, `client/src/components/*` | apple-ui-design |
+| `client/src/pages/*`, `client/src/components/*` | apple-ui-design, common-pitfalls |
+| `client/src/hooks/*` | common-pitfalls (TanStack Query) |
 | `rust-core/**/*.rs` | code-consistency-validator, latency-tracker |
 | `*token*`, `*protocol*`, `*chain*` | defi-registry-manager |
 | `*arbitrage*`, `*trade*`, `*swap*` | liquidity-depth-analyzer |
 | `*logger*`, `*error*` | error-logger |
+| `*websocket*`, `*ws*` | common-pitfalls (WebSocket) |
+| `schema.ts`, `*.sql` | common-pitfalls (Drizzle) |
 
 ### Step 3: Review Checklist
 
@@ -73,6 +76,30 @@ For EVERY review, check these critical items:
 - [ ] Consistent naming conventions
 - [ ] No dead code or unused imports
 - [ ] Proper async/await usage
+
+#### TanStack Query (if applicable)
+- [ ] QueryKeys use full URL paths
+- [ ] Mutations invalidate relevant queries
+- [ ] Using isPending (not isLoading) for mutations in v5
+- [ ] Responses typed with schema types
+
+#### Drizzle ORM (if applicable)
+- [ ] No primary key type changes
+- [ ] Array columns use `text().array()` syntax
+- [ ] Insert/select types exported for models
+- [ ] Using drizzle-zod for validation
+
+#### React Components (if applicable)
+- [ ] Loading/error states handled
+- [ ] data-testid on interactive elements
+- [ ] Using router Link, not window.location
+- [ ] Helper functions defined before use
+
+#### Blockchain/RPC (if applicable)
+- [ ] All contract calls wrapped in try/catch
+- [ ] Multicall uses `allowFailure: true`
+- [ ] Prices validated against expected ranges
+- [ ] Handling "execution reverted" gracefully
 
 ### Step 4: Report Format
 
