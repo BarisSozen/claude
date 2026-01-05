@@ -44,7 +44,10 @@ async function deriveKeyFromSignature(signature: Hex): Promise<CryptoKey> {
 
   // Hash the full signature for better entropy distribution
   // This ensures we use all available entropy from the signature
-  const hashedSignature = await crypto.subtle.digest('SHA-256', signatureBytes);
+  // Copy to a fresh ArrayBuffer to satisfy TypeScript's strict BufferSource type
+  const signatureBuffer = new ArrayBuffer(signatureBytes.length);
+  new Uint8Array(signatureBuffer).set(signatureBytes);
+  const hashedSignature = await crypto.subtle.digest('SHA-256', signatureBuffer);
 
   // Import the hashed signature as key material
   const keyMaterial = await crypto.subtle.importKey(

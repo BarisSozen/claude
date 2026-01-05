@@ -4,6 +4,31 @@ import { useNavigate } from 'react-router-dom';
 import { SiweMessage } from 'siwe';
 import { useAuthStore } from '../store/auth';
 
+// Fetch wrapper with timeout to prevent hanging requests
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = 30000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out');
+    }
+    throw error;
+  }
+}
+
 export default function ConnectWallet() {
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
@@ -33,7 +58,7 @@ export default function ConnectWallet() {
 
     try {
       // Get nonce from server
-      const nonceRes = await fetch('/api/auth/nonce', {
+      const nonceRes = await fetchWithTimeout('/api/auth/nonce', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walletAddress }),
@@ -62,7 +87,7 @@ export default function ConnectWallet() {
       const signature = await signMessageAsync({ message: messageToSign });
 
       // Verify with server
-      const verifyRes = await fetch('/api/auth/verify', {
+      const verifyRes = await fetchWithTimeout('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
