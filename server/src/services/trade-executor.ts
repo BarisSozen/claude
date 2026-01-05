@@ -434,6 +434,128 @@ class TradeExecutorService {
   }
 
   /**
+   * Build swap transaction for MEV bundle
+   * Returns unsigned transaction for Flashbots submission
+   */
+  async buildSwapTransaction(
+    delegationId: string,
+    tokenIn: Address,
+    tokenOut: Address,
+    amountIn: bigint,
+    minAmountOut: bigint,
+    dex: string
+  ): Promise<{
+    success: boolean;
+    transaction?: {
+      to: Address;
+      data: Hex;
+      value?: bigint;
+      gasLimit?: bigint;
+    };
+    error?: string;
+  }> {
+    const context = await this.initializeContext(delegationId);
+    if (!context) {
+      return { success: false, error: 'Failed to initialize execution context' };
+    }
+
+    try {
+      const chainId = context.delegation.chainId as ChainId;
+      let router: Address;
+      let callData: Hex;
+
+      if (dex.startsWith('uniswap-v3')) {
+        router = PROTOCOL_ADDRESSES[chainId]?.uniswapV3Router as Address;
+        if (!router) {
+          return { success: false, error: `Uniswap V3 router not found for ${chainId}` };
+        }
+
+        // Extract fee from dex string (e.g., 'uniswap-v3-3000')
+        const fee = parseInt(dex.split('-')[2], 10) || 3000;
+
+        const swapParams = {
+          tokenIn,
+          tokenOut,
+          fee,
+          recipient: context.sessionKeyAddress,
+          deadline: this.getDeadline(5),
+          amountIn,
+          amountOutMinimum: minAmountOut,
+          sqrtPriceLimitX96: 0n,
+        };
+
+        callData = encodeFunctionData({
+          abi: UNISWAP_V3_ROUTER_ABI,
+          functionName: 'exactInputSingle',
+          args: [swapParams],
+        });
+      } else if (dex === 'sushiswap') {
+        router = PROTOCOL_ADDRESSES[chainId]?.sushiswapRouter as Address;
+        if (!router) {
+          return { success: false, error: `SushiSwap router not found for ${chainId}` };
+        }
+
+        // V2-style swap
+        const SUSHISWAP_V2_ABI = [{
+          inputs: [
+            { name: 'amountIn', type: 'uint256' },
+            { name: 'amountOutMin', type: 'uint256' },
+            { name: 'path', type: 'address[]' },
+            { name: 'to', type: 'address' },
+            { name: 'deadline', type: 'uint256' },
+          ],
+          name: 'swapExactTokensForTokens',
+          outputs: [{ name: 'amounts', type: 'uint256[]' }],
+          stateMutability: 'nonpayable',
+          type: 'function',
+        }] as const;
+
+        callData = encodeFunctionData({
+          abi: SUSHISWAP_V2_ABI,
+          functionName: 'swapExactTokensForTokens',
+          args: [
+            amountIn,
+            minAmountOut,
+            [tokenIn, tokenOut],
+            context.sessionKeyAddress,
+            this.getDeadline(5),
+          ],
+        });
+      } else {
+        return { success: false, error: `Unsupported DEX: ${dex}` };
+      }
+
+      return {
+        success: true,
+        transaction: {
+          to: router,
+          data: callData,
+          value: tokenIn === ETH_ADDRESS ? amountIn : undefined,
+          gasLimit: dex.startsWith('uniswap-v3') ? 180000n : 150000n,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to build transaction',
+      };
+    }
+  }
+
+  /**
+   * Get current block number
+   */
+  async getCurrentBlock(chainId: ChainId): Promise<bigint> {
+    const chain = this.getChain(chainId);
+    const client = createPublicClient({
+      chain,
+      transport: http(getRpcUrl(chainId)),
+    });
+
+    return client.getBlockNumber();
+  }
+
+  /**
    * Clean up execution context
    */
   cleanupContext(delegationId: string): void {
