@@ -7,6 +7,42 @@ description: Guide for creating effective skills. This skill should be used when
 
 This skill provides guidance for creating effective skills.
 
+## When to Use
+
+- Creating a new skill from scratch
+- Updating an existing skill
+- Organizing skill structure (scripts, references, assets)
+- Packaging skills for distribution
+- Reviewing skill quality
+
+## Workflow
+
+### Step 1: Understand Requirements
+
+Gather examples of how the skill will be used.
+
+### Step 2: Plan Contents
+
+Identify scripts, references, and assets needed.
+
+### Step 3: Initialize Structure
+
+Run init_skill.py to create directory structure.
+
+### Step 4: Edit SKILL.md
+
+Define purpose, triggers, and workflow.
+
+### Step 5: Package
+
+Run package_skill.py to validate and zip.
+
+### Step 6: Iterate
+
+Test and improve based on real usage.
+
+---
+
 ## About Skills
 
 Skills are modular, self-contained packages that extend Claude's capabilities by providing

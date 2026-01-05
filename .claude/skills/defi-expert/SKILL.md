@@ -5,6 +5,32 @@ description: DeFi protocol expert ensuring correct data formats, types, denomina
 
 # DeFi Expert
 
+DeFi protocol expert ensuring correct data formats, types, and denominations.
+
+## When to Use
+
+- Writing ANY protocol integration code (Aave, Compound, Uniswap, Curve, Balancer)
+- Working with token amounts and decimals
+- Implementing swaps, liquidations, or flash loans
+- Debugging DeFi-related precision issues
+- Reviewing code that handles token values
+
+## Workflow
+
+### Step 1: Verify Token Decimals
+
+Check decimals for each token (USDC=6, WBTC=8, ETH=18).
+
+### Step 2: Check Denomination
+
+Verify correct unit (wei, ray, wad, bps).
+
+### Step 3: Validate Addresses
+
+Ensure checksummed addresses are used.
+
+---
+
 **CRITICAL: Before writing ANY DeFi code, verify:**
 1. Token decimals (USDC=6, not 18!)
 2. Denomination (wei, ray, wad, bps)

@@ -5,6 +5,32 @@ description: Validates type consistency across Rust, TypeScript, PostgreSQL boun
 
 # Code Consistency Validator
 
+Validates type consistency across Rust, TypeScript, and PostgreSQL boundaries.
+
+## When to Use
+
+- Reviewing code for type mismatches
+- Debugging precision loss issues
+- Validating API contracts between languages
+- Checking BigInt/Number conversions
+- Auditing cross-language data flow
+
+## Workflow
+
+### Step 1: Run Quick Grep
+
+Use provided grep commands to find potential issues.
+
+### Step 2: Check Critical Patterns
+
+Look for Number() on wei/balance, parseInt without radix.
+
+### Step 3: Generate Report
+
+Report findings using severity levels (CRITICAL/WARNING/INFO).
+
+---
+
 ## Critical Type Mappings
 
 | Rust | TypeScript | PostgreSQL |

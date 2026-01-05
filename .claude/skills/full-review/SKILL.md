@@ -7,6 +7,38 @@ description: Comprehensive code review using all available skills. Use before co
 
 Orchestrates all available review skills to provide comprehensive code analysis.
 
+## When to Use
+
+- Before committing code changes
+- Performing pre-merge reviews
+- Running comprehensive audits
+- Checking code against all quality standards
+- Validating changes across the full stack
+
+## Workflow
+
+### Step 1: Identify Changes
+
+Get list of changed files using git diff.
+
+### Step 2: Map Skills to Files
+
+Invoke relevant skills based on file patterns.
+
+### Step 3: Run Checklists
+
+Apply security, DeFi, type safety, and performance checks.
+
+### Step 4: Generate Report
+
+Produce structured report with severity levels.
+
+### Step 5: Auto-Fix (Optional)
+
+Offer to fix critical issues automatically.
+
+---
+
 ## Trigger Phrases
 - "review code", "check changes", "full review"
 - "pre-commit review", "review before commit"

@@ -5,7 +5,35 @@ description: Manages expansion of tokens, pools, chains, networks, and DEXes acr
 
 # DeFi Registry Manager
 
-Manages expansion of tokens, pools, chains, networks, and DEXes across the codebase. Use when adding new tokens, protocols, chains, networks, or updating existing DeFi registry data.
+Manages expansion of tokens, pools, chains, networks, and DEXes across the codebase.
+
+## When to Use
+
+- Adding new tokens to the registry
+- Adding new protocols or DEXes
+- Adding support for new chains
+- Configuring network RPC endpoints
+- Updating token addresses or decimals
+
+## Workflow
+
+### Step 1: Identify Registry Type
+
+Determine if adding token, protocol, chain, or network.
+
+### Step 2: Follow Checklist
+
+Use the appropriate checklist for the registry type.
+
+### Step 3: Update All Files
+
+Ensure ALL required files are updated together.
+
+### Step 4: Validate Changes
+
+Run validation commands to verify consistency.
+
+---
 
 ## Trigger Phrases
 - "add token", "new token", "add coin"

@@ -5,6 +5,32 @@ description: Per-call and aggregated latency tracking for MEV infrastructure. Us
 
 # Latency Tracker
 
+Per-call and aggregated latency tracking for MEV infrastructure.
+
+## When to Use
+
+- Implementing performance monitoring
+- Debugging slow operations
+- Adding instrumentation to code paths
+- Tracking end-to-end latency
+- Setting up alerting thresholds
+
+## Workflow
+
+### Step 1: Define Span Hierarchy
+
+Structure spans from e2e_flow down to individual calls.
+
+### Step 2: Instrument Code
+
+Wrap operations in tracker.span() calls.
+
+### Step 3: Set Alert Thresholds
+
+Configure alerts for latency exceeding expected ranges.
+
+---
+
 ## Span Hierarchy
 e2e_flow (root)
 ├── rust_hotpath_call (5-15ms)

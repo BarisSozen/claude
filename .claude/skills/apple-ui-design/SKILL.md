@@ -5,6 +5,36 @@ description: Apple-inspired clean, minimal, premium UI design. Use when building
 
 # Apple UI Design
 
+Apple-inspired clean, minimal, premium UI design system.
+
+## When to Use
+
+- Building modern interfaces requiring exceptional UX
+- Creating clean, minimal aesthetics
+- Implementing Apple-like polish and animations
+- Designing premium user experiences
+- Reviewing UI/UX for design quality
+
+## Workflow
+
+### Step 1: Apply Typography System
+
+Use SF Pro Display with proper hierarchy (hero, title, body, caption).
+
+### Step 2: Apply Color Philosophy
+
+Use light/dark mode variables with proper contrast.
+
+### Step 3: Apply Spacing System
+
+Follow 4/8/16/24/48/96px spacing rhythm.
+
+### Step 4: Verify Checklist
+
+Ensure touch targets, contrast, and animations meet standards.
+
+---
+
 ## Core Principles
 
 1. **Clarity** - Content is king, UI disappears

@@ -5,6 +5,36 @@ description: Quantitative trading expertise for DeFi and crypto derivatives. Use
 
 # HFT Quant Expert
 
+Quantitative trading expertise for DeFi and crypto derivatives.
+
+## When to Use
+
+- Building trading strategies and signals
+- Implementing risk management
+- Calculating position sizes
+- Backtesting strategies
+- Analyzing volatility and correlations
+
+## Workflow
+
+### Step 1: Define Signal
+
+Calculate z-score or other entry signal.
+
+### Step 2: Size Position
+
+Use Kelly Criterion (0.25x) for position sizing.
+
+### Step 3: Validate Backtest
+
+Check for lookahead bias, survivorship bias, overfitting.
+
+### Step 4: Account for Costs
+
+Include gas + slippage in profit calculations.
+
+---
+
 ## Quick Formulas
 ```python
 # Z-score
