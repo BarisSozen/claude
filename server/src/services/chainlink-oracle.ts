@@ -13,6 +13,7 @@ import {
 import { mainnet, arbitrum, base, polygon } from 'viem/chains';
 import { getRpcUrl } from '../config/env.js';
 import type { ChainId } from '../../shared/schema.js';
+import { logger } from '../utils/structured-logger.js';
 
 // Chainlink Aggregator V3 ABI
 const AGGREGATOR_V3_ABI = [
@@ -200,7 +201,8 @@ class ChainlinkOracleService {
 
       return priceData;
     } catch (error) {
-      console.error(`Chainlink price fetch failed for ${feedName}:`, error);
+      const ctx = logger.startOperation('quo');
+      logger.error(ctx, 'chainlink_price_fetch_failed', `Price fetch failed for ${feedName}`, { feedName, chainId, error: error instanceof Error ? error.message : 'Unknown error' });
       return null;
     }
   }
@@ -247,11 +249,23 @@ class ChainlinkOracleService {
   ): Promise<PriceValidation> {
     const chainlinkData = await this.getTokenPrice(chainId, tokenAddress);
 
-    if (!chainlinkData || chainlinkData.isStale) {
+    // If no price data available, we cannot validate - fail safe
+    if (!chainlinkData) {
       return {
-        isValid: true, // Can't validate, assume valid
+        isValid: false,
         deviation: 0,
         chainlinkPrice: 0,
+        comparedPrice: dexPrice,
+        maxDeviation: maxDeviationPercent,
+      };
+    }
+
+    // CRITICAL: Stale prices should NOT be trusted - reject validation
+    if (chainlinkData.isStale) {
+      return {
+        isValid: false,
+        deviation: 0,
+        chainlinkPrice: chainlinkData.price,
         comparedPrice: dexPrice,
         maxDeviation: maxDeviationPercent,
       };

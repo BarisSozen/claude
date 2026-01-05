@@ -206,11 +206,8 @@ router.delete('/:id', standardLimiter, validateParams(uuidParamSchema), async (r
       });
     }
 
-    res.json({
-      success: true,
-      message: 'Strategy deleted',
-      timestamp: Date.now(),
-    });
+    // Return 204 No Content for successful DELETE
+    res.status(204).send();
   } catch (error) {
     console.error('Delete strategy error:', error);
     res.status(500).json({

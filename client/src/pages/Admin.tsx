@@ -54,29 +54,29 @@ export default function Admin() {
   const [editItem, setEditItem] = useState<Token | Protocol | Chain | Strategy | null>(null);
 
   // Tokens query
-  const { data: tokensData, isLoading: tokensLoading } = useQuery({
-    queryKey: ['admin-tokens'],
+  const { data: tokensData, isPending: tokensPending } = useQuery({
+    queryKey: ['/api/admin/tokens'],
     queryFn: () => api.get<{ data: { tokens: Token[] } }>('/admin/tokens?limit=100'),
     enabled: activeTab === 'tokens',
   });
 
   // Protocols query
-  const { data: protocolsData, isLoading: protocolsLoading } = useQuery({
-    queryKey: ['admin-protocols'],
+  const { data: protocolsData, isPending: protocolsPending } = useQuery({
+    queryKey: ['/api/admin/protocols'],
     queryFn: () => api.get<{ data: { protocols: Protocol[] } }>('/admin/protocols?limit=100'),
     enabled: activeTab === 'protocols',
   });
 
   // Chains query
-  const { data: chainsData, isLoading: chainsLoading } = useQuery({
-    queryKey: ['admin-chains'],
+  const { data: chainsData, isPending: chainsPending } = useQuery({
+    queryKey: ['/api/admin/chains'],
     queryFn: () => api.get<{ data: { chains: Chain[] } }>('/admin/chains?limit=100'),
     enabled: activeTab === 'chains',
   });
 
   // Strategies query
-  const { data: strategiesData, isLoading: strategiesLoading } = useQuery({
-    queryKey: ['admin-strategies'],
+  const { data: strategiesData, isPending: strategiesPending } = useQuery({
+    queryKey: ['/api/strategies'],
     queryFn: () => api.get<{ data: { strategies: Strategy[] } }>('/strategies?limit=100'),
     enabled: activeTab === 'strategies',
   });
@@ -85,46 +85,46 @@ export default function Admin() {
   const toggleTokenMutation = useMutation({
     mutationFn: (token: Token) =>
       api.patch(`/admin/tokens/${token.id}`, { enabled: !token.enabled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-tokens'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/tokens'] }),
   });
 
   const toggleProtocolMutation = useMutation({
     mutationFn: (protocol: Protocol) =>
       api.patch(`/admin/protocols/${protocol.id}`, { enabled: !protocol.enabled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-protocols'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/protocols'] }),
   });
 
   const toggleChainMutation = useMutation({
     mutationFn: (chain: Chain) =>
       api.patch(`/admin/chains/${chain.id}`, { enabled: !chain.enabled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-chains'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/chains'] }),
   });
 
   const toggleStrategyMutation = useMutation({
     mutationFn: (strategy: Strategy) =>
       api.patch(`/strategies/${strategy.id}`, { enabled: !strategy.enabled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-strategies'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/strategies'] }),
   });
 
   // Delete mutations
   const deleteTokenMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/tokens/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-tokens'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/tokens'] }),
   });
 
   const deleteProtocolMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/protocols/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-protocols'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/protocols'] }),
   });
 
   const deleteChainMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/admin/chains/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-chains'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/admin/chains'] }),
   });
 
   const deleteStrategyMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/strategies/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-strategies'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/strategies'] }),
   });
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
@@ -134,11 +134,11 @@ export default function Admin() {
     { id: 'strategies', label: 'Strategies', icon: '📈' },
   ];
 
-  const isLoading =
-    (activeTab === 'tokens' && tokensLoading) ||
-    (activeTab === 'protocols' && protocolsLoading) ||
-    (activeTab === 'chains' && chainsLoading) ||
-    (activeTab === 'strategies' && strategiesLoading);
+  const isPending =
+    (activeTab === 'tokens' && tokensPending) ||
+    (activeTab === 'protocols' && protocolsPending) ||
+    (activeTab === 'chains' && chainsPending) ||
+    (activeTab === 'strategies' && strategiesPending);
 
   return (
     <div className="space-y-6">
@@ -175,7 +175,7 @@ export default function Admin() {
 
       {/* Content */}
       <div className="card">
-        {isLoading ? (
+        {isPending ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
           </div>

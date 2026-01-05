@@ -17,7 +17,7 @@ import { mainnet, arbitrum } from 'viem/chains';
 import { getRpcUrl, config } from '../config/env.js';
 import { tradeExecutorService } from './trade-executor.js';
 import type { ChainId, ExecutionStep, TradeResult } from '../../shared/schema.js';
-import { PROTOCOL_ADDRESSES } from '../../shared/schema.js';
+import { PROTOCOL_ADDRESSES, TOKEN_DECIMALS } from '../../shared/schema.js';
 
 // Aave V3 Pool ABI (minimal for flash loans)
 const AAVE_POOL_ABI = [
@@ -132,8 +132,11 @@ class FlashLoanService {
     // Calculate profit after flash loan premium
     const estimatedProfit = estimatedProfitBeforeLoan - premium;
 
+    // Get token decimals (don't hardcode 18 - USDC/USDT are 6)
+    const tokenDecimals = TOKEN_DECIMALS[loanToken.toLowerCase()] ?? 18;
+
     // Convert to USD (rough estimate)
-    const profitNormalized = Number(formatUnits(estimatedProfit, 18));
+    const profitNormalized = Number(formatUnits(estimatedProfit, tokenDecimals));
     const profitUSD = profitNormalized * config.prices.ethUsd;
 
     // Gas estimate for flash loan + swaps (higher than regular)
@@ -318,10 +321,13 @@ class FlashLoanService {
     // Check max amount
     const maxAmount = await this.getMaxFlashLoanAmount(params.chainId, params.loanToken);
 
+    // Get token decimals for proper formatting
+    const tokenDecimals = TOKEN_DECIMALS[params.loanToken.toLowerCase()] ?? 18;
+
     if (params.loanAmount > maxAmount) {
       return {
         success: false,
-        error: `Loan amount exceeds max (${formatUnits(maxAmount, 18)})`,
+        error: `Loan amount exceeds max (${formatUnits(maxAmount, tokenDecimals)})`,
       };
     }
 

@@ -22,8 +22,8 @@ export default function Opportunities() {
   const { subscribe } = useWebSocket();
   const [liveOpportunities, setLiveOpportunities] = useState<Opportunity[]>([]);
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['opportunities'],
+  const { data, isPending, refetch } = useQuery({
+    queryKey: ['/api/opportunities'],
     queryFn: () => api.get<{ data: { opportunities: Opportunity[]; count: number } }>('/opportunities'),
     refetchInterval: 10000,
   });
@@ -31,7 +31,7 @@ export default function Opportunities() {
   const scanMutation = useMutation({
     mutationFn: () => api.post('/opportunities/scan'),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/opportunities'] });
     },
   });
 
@@ -76,7 +76,7 @@ export default function Opportunities() {
     return <span className="text-gray-500">{secondsLeft}s</span>;
   };
 
-  if (isLoading) {
+  if (isPending) {
     return <div className="text-center py-8">Loading...</div>;
   }
 

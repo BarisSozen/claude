@@ -254,11 +254,8 @@ router.delete('/tokens/:id', standardLimiter, validateParams(uuidParamSchema), a
       });
     }
 
-    res.json({
-      success: true,
-      message: 'Token deleted',
-      timestamp: Date.now(),
-    });
+    // Return 204 No Content for successful DELETE
+    res.status(204).send();
   } catch (error) {
     console.error('Delete token error:', error);
     res.status(500).json({
@@ -487,11 +484,8 @@ router.delete(
         });
       }
 
-      res.json({
-        success: true,
-        message: 'Protocol deleted',
-        timestamp: Date.now(),
-      });
+      // Return 204 No Content for successful DELETE
+      res.status(204).send();
     } catch (error) {
       console.error('Delete protocol error:', error);
       res.status(500).json({
@@ -708,11 +702,8 @@ router.delete(
         });
       }
 
-      res.json({
-        success: true,
-        message: 'Chain deleted',
-        timestamp: Date.now(),
-      });
+      // Return 204 No Content for successful DELETE
+      res.status(204).send();
     } catch (error) {
       console.error('Delete chain error:', error);
       res.status(500).json({

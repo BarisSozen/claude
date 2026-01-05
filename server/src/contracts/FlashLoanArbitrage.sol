@@ -204,17 +204,23 @@ contract FlashLoanArbitrage is FlashLoanSimpleReceiverBase, Ownable, ReentrancyG
         uint256 amountIn,
         uint256 minAmountOut
     ) external view returns (bytes memory) {
-        // ISwapRouter.ExactInputSingleParams
-        return abi.encodeWithSignature(
-            "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-            tokenIn,
-            tokenOut,
-            fee,
-            address(this),
-            block.timestamp + 300, // 5 minute deadline
-            amountIn,
-            minAmountOut,
-            0 // sqrtPriceLimitX96 (0 = no limit)
+        // Use abi.encodeWithSelector for proper struct/tuple encoding
+        // Function selector: exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))
+        bytes4 selector = 0x414bf389; // Pre-computed selector for exactInputSingle
+
+        // Encode parameters as a tuple (struct is encoded as tuple in ABI)
+        return abi.encodePacked(
+            selector,
+            abi.encode(
+                tokenIn,
+                tokenOut,
+                fee,
+                address(this),
+                block.timestamp + 300, // 5 minute deadline
+                amountIn,
+                minAmountOut,
+                uint160(0) // sqrtPriceLimitX96 (0 = no limit)
+            )
         );
     }
 

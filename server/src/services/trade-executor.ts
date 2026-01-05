@@ -26,6 +26,7 @@ import { priceOracleService } from './price-oracle.js';
 import { db, trades } from '../db/index.js';
 import type { ChainId, TradeParams, TradeResult, TradeAction } from '../../shared/schema.js';
 import { TOKEN_DECIMALS, PROTOCOL_ADDRESSES, ETH_ADDRESS } from '../../shared/schema.js';
+import { logger } from '../utils/structured-logger.js';
 
 // Uniswap V3 Router ABI (minimal for exactInputSingle)
 const UNISWAP_V3_ROUTER_ABI = [
@@ -98,7 +99,8 @@ class TradeExecutorService {
     // Validate delegation
     const validation = await delegationService.validate(delegationId);
     if (!validation.valid || !validation.delegation) {
-      console.error(`Delegation validation failed: ${validation.reason}`);
+      const ctx = logger.startOperation('op');
+      logger.warn(ctx, 'delegation_validation_failed', `Delegation validation failed: ${validation.reason}`, { delegationId });
       return null;
     }
 
@@ -109,7 +111,8 @@ class TradeExecutorService {
     try {
       privateKey = decryptPrivateKey(delegation.encryptedSessionKey);
     } catch (error) {
-      console.error('Failed to decrypt session key:', error);
+      const ctx = logger.startOperation('op');
+      logger.error(ctx, 'session_key_decrypt_failed', 'Failed to decrypt session key', { delegationId });
       return null;
     }
 
@@ -118,7 +121,8 @@ class TradeExecutorService {
 
     // Verify the decrypted key matches the stored address
     if (account.address.toLowerCase() !== delegation.sessionKeyAddress.toLowerCase()) {
-      console.error('Session key address mismatch');
+      const ctx = logger.startOperation('op');
+      logger.error(ctx, 'session_key_mismatch', 'Session key address mismatch', { delegationId });
       return null;
     }
 
@@ -335,7 +339,8 @@ class TradeExecutorService {
         .where(eq(trades.id, tradeRecord.id));
 
       const executionTime = Date.now() - startTime;
-      console.log(`Trade executed in ${executionTime}ms: ${txHash}`);
+      const ctx = logger.startOperation('op');
+      logger.info(ctx, 'trade_executed', `Trade executed in ${executionTime}ms`, { txHash, executionTime });
 
       return {
         success: true,
@@ -343,7 +348,8 @@ class TradeExecutorService {
         gasUsed: receipt.gasUsed,
       };
     } catch (error) {
-      console.error('Trade execution failed:', error);
+      const ctx = logger.startOperation('op');
+      logger.error(ctx, 'trade_execution_failed', 'Trade execution failed', { error: error instanceof Error ? error.message : 'Unknown error' });
 
       // Update trade record
       await db
@@ -420,9 +426,12 @@ class TradeExecutorService {
 
   /**
    * Calculate minimum output with slippage
+   * @param expectedOutput - Expected output amount
+   * @param slippagePercent - Slippage tolerance as percentage (e.g., 0.5 for 0.5%)
    */
   calculateMinOutput(expectedOutput: bigint, slippagePercent: number): bigint {
-    const slippageBps = BigInt(Math.floor(slippagePercent * 10000));
+    // Convert percent to basis points: 0.5% = 50 bps
+    const slippageBps = BigInt(Math.floor(slippagePercent * 100));
     return (expectedOutput * (10000n - slippageBps)) / 10000n;
   }
 
