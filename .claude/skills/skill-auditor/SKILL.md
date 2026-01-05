@@ -40,7 +40,7 @@ The script validates:
 - YAML frontmatter presence and required fields
 - Description quality (length, specificity)
 - Word count limits (<5000 words recommended)
-- TODO placeholder detection
+- Unfinished placeholder detection
 - Empty directory warnings
 - Script executability
 
@@ -50,7 +50,7 @@ For each skill, evaluate against these criteria:
 
 **Frontmatter Quality:**
 - `name`: Uses hyphens, is descriptive
-- `description`: 50+ characters, specific about triggers, no TODOs
+- `description`: 50+ characters, specific about triggers, no placeholders
 
 **Content Structure:**
 - Clear "When to Use" section with specific triggers
@@ -73,7 +73,7 @@ Produce a structured report for each skill:
 - Frontmatter: PASS/FAIL
 - Structure: PASS/FAIL
 - Word Count: X words (PASS/WARNING/FAIL)
-- TODO Placeholders: X found
+- Unfinished Placeholders: X found
 
 ### Quality Score: X/10
 
