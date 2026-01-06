@@ -27,25 +27,47 @@ class WebSocketService {
 
   /**
    * Initialize WebSocket server
+   * Uses subprotocol-based authentication for security
+   * Client should connect with: new WebSocket(url, ['auth', 'token-<jwt>'])
    */
   initialize(server: Server): void {
-    this.wss = new WebSocketServer({ server, path: '/ws' });
+    this.wss = new WebSocketServer({
+      server,
+      path: '/ws',
+      // Verify client during upgrade handshake
+      verifyClient: (info, callback) => {
+        // Extract token from Sec-WebSocket-Protocol header
+        const protocols = info.req.headers['sec-websocket-protocol'];
+        if (protocols) {
+          const protocolList = protocols.split(',').map(p => p.trim());
+          const authProtocol = protocolList.find(p => p.startsWith('auth-token-'));
+
+          if (authProtocol) {
+            const token = authProtocol.replace('auth-token-', '');
+            const session = validateSession(token);
+            if (session.valid) {
+              // Store session info for connection handler
+              (info.req as any)._wsSession = session;
+              callback(true);
+              return;
+            }
+          }
+        }
+        // Allow unauthenticated connections for public feeds
+        callback(true);
+      },
+    });
 
     this.wss.on('connection', (ws: WebSocket, req) => {
       const client = ws as AuthenticatedWebSocket;
       client.isAlive = true;
       client.subscriptions = new Set();
 
-      // Handle authentication via query param
-      const url = new URL(req.url || '', `http://${req.headers.host}`);
-      const token = url.searchParams.get('token');
-
-      if (token) {
-        const session = validateSession(token);
-        if (session.valid && session.userId && session.walletAddress) {
-          client.userId = session.userId;
-          client.walletAddress = session.walletAddress;
-        }
+      // Get session from verified client (if authenticated)
+      const session = (req as any)._wsSession;
+      if (session?.valid && session.userId && session.walletAddress) {
+        client.userId = session.userId;
+        client.walletAddress = session.walletAddress;
       }
 
       this.clients.add(client);

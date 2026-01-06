@@ -305,7 +305,10 @@ class PositionSizingService {
     // Inverse volatility scaling
     const volMultiplier = Math.min(2, Math.max(0.25, targetVolatility / recentVolatility));
 
-    return BigInt(Math.floor(Number(baseSize) * volMultiplier));
+    // Safe BigInt multiplication: multiply by scaled integer then divide
+    // Use 10000 basis points for precision
+    const multiplierBps = BigInt(Math.floor(volMultiplier * 10000));
+    return (baseSize * multiplierBps) / 10000n;
   }
 
   /**
@@ -333,7 +336,10 @@ class PositionSizingService {
     // Apply fractional Kelly
     fraction *= this.kellyMultiplier;
 
-    return BigInt(Math.floor(Number(availableCapitalWei) * fraction));
+    // Safe BigInt multiplication: use basis points for precision
+    // This avoids Number() on large wei values which causes precision loss
+    const fractionBps = BigInt(Math.floor(fraction * 10000));
+    return (availableCapitalWei * fractionBps) / 10000n;
   }
 
   /**
