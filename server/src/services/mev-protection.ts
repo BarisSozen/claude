@@ -21,6 +21,36 @@ import { mainnet } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { config } from '../config/env.js';
 
+// Fetch timeout configuration
+const FETCH_TIMEOUT_MS = 10000; // 10 seconds
+
+/**
+ * Fetch with timeout to prevent hanging requests
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request to ${new URL(url).hostname} timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
+}
+
 // Flashbots RPC endpoints
 const FLASHBOTS_RPC = 'https://relay.flashbots.net';
 const FLASHBOTS_GOERLI_RPC = 'https://relay-goerli.flashbots.net';
@@ -136,7 +166,7 @@ class MevProtectionService {
     try {
       const authHeader = await this.getFlashbotsAuthHeader(body);
 
-      const response = await fetch(FLASHBOTS_RPC, {
+      const response = await fetchWithTimeout(FLASHBOTS_RPC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +228,7 @@ class MevProtectionService {
     });
 
     try {
-      const response = await fetch(`${BLOXROUTE_RPC}/eth/v1/bundle`, {
+      const response = await fetchWithTimeout(`${BLOXROUTE_RPC}/eth/v1/bundle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +278,7 @@ class MevProtectionService {
     try {
       const authHeader = await this.getFlashbotsAuthHeader(body);
 
-      const response = await fetch(FLASHBOTS_RPC, {
+      const response = await fetchWithTimeout(FLASHBOTS_RPC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -349,7 +379,7 @@ class MevProtectionService {
     try {
       const authHeader = await this.getFlashbotsAuthHeader(body);
 
-      const response = await fetch(FLASHBOTS_RPC, {
+      const response = await fetchWithTimeout(FLASHBOTS_RPC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -396,7 +426,7 @@ class MevProtectionService {
     try {
       const authHeader = await this.getFlashbotsAuthHeader(body);
 
-      const response = await fetch(FLASHBOTS_RPC, {
+      const response = await fetchWithTimeout(FLASHBOTS_RPC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -440,7 +470,7 @@ class MevProtectionService {
     try {
       const authHeader = await this.getFlashbotsAuthHeader(body);
 
-      const response = await fetch(FLASHBOTS_RPC, {
+      const response = await fetchWithTimeout(FLASHBOTS_RPC, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

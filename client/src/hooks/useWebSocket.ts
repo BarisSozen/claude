@@ -18,6 +18,12 @@ const BACKOFF_CONFIG = {
   maxRetries: 10,
 };
 
+// Heartbeat configuration
+const HEARTBEAT_CONFIG = {
+  interval: 30000,      // Send ping every 30 seconds
+  timeout: 10000,       // Wait 10 seconds for pong before considering connection dead
+};
+
 export function useWebSocket() {
   const token = useAuthStore((state) => state.token);
   const wsRef = useRef<WebSocket | null>(null);
@@ -25,6 +31,9 @@ export function useWebSocket() {
   const handlersRef = useRef<Map<string, Set<MessageHandler>>>(new Map());
   const retryCountRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const heartbeatTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const awaitingPongRef = useRef(false);
 
   /**
    * Calculate exponential backoff delay
@@ -35,6 +44,44 @@ export function useWebSocket() {
     const jitter = delay * 0.2 * (Math.random() - 0.5);
     return Math.min(delay + jitter, BACKOFF_CONFIG.maxDelay);
   }, []);
+
+  /**
+   * Stop heartbeat timers
+   */
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+    if (heartbeatTimeoutRef.current) {
+      clearTimeout(heartbeatTimeoutRef.current);
+      heartbeatTimeoutRef.current = null;
+    }
+    awaitingPongRef.current = false;
+  }, []);
+
+  /**
+   * Start heartbeat to detect stale connections
+   */
+  const startHeartbeat = useCallback(() => {
+    stopHeartbeat();
+
+    heartbeatIntervalRef.current = setInterval(() => {
+      if (wsRef.current?.readyState === WebSocket.OPEN && !awaitingPongRef.current) {
+        // Send ping
+        wsRef.current.send(JSON.stringify({ type: 'ping' }));
+        awaitingPongRef.current = true;
+
+        // Set timeout for pong response
+        heartbeatTimeoutRef.current = setTimeout(() => {
+          if (awaitingPongRef.current) {
+            // No pong received, connection is stale
+            wsRef.current?.close();
+          }
+        }, HEARTBEAT_CONFIG.timeout);
+      }
+    }, HEARTBEAT_CONFIG.interval);
+  }, [stopHeartbeat]);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -53,10 +100,12 @@ export function useWebSocket() {
     ws.onopen = () => {
       setIsConnected(true);
       retryCountRef.current = 0; // Reset retry count on successful connection
+      startHeartbeat(); // Start heartbeat monitoring
     };
 
     ws.onclose = () => {
       setIsConnected(false);
+      stopHeartbeat(); // Stop heartbeat monitoring
 
       // Exponential backoff reconnection
       if (retryCountRef.current < BACKOFF_CONFIG.maxRetries) {
@@ -83,6 +132,16 @@ export function useWebSocket() {
 
         const { type, payload } = parseResult.data;
 
+        // Handle pong response for heartbeat
+        if (type === 'pong') {
+          awaitingPongRef.current = false;
+          if (heartbeatTimeoutRef.current) {
+            clearTimeout(heartbeatTimeoutRef.current);
+            heartbeatTimeoutRef.current = null;
+          }
+          return;
+        }
+
         const handlers = handlersRef.current.get(type);
         if (handlers) {
           handlers.forEach((handler) => handler(payload));
@@ -93,7 +152,7 @@ export function useWebSocket() {
     };
 
     wsRef.current = ws;
-  }, [token, getBackoffDelay]);
+  }, [token, getBackoffDelay, startHeartbeat, stopHeartbeat]);
 
   const disconnect = useCallback(() => {
     // Clear any pending reconnect timeout
@@ -101,6 +160,8 @@ export function useWebSocket() {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
+    // Stop heartbeat
+    stopHeartbeat();
     // Prevent auto-reconnect
     retryCountRef.current = BACKOFF_CONFIG.maxRetries;
 
@@ -108,7 +169,7 @@ export function useWebSocket() {
       wsRef.current.close();
       wsRef.current = null;
     }
-  }, []);
+  }, [stopHeartbeat]);
 
   const subscribe = useCallback((type: string, handler: MessageHandler) => {
     if (!handlersRef.current.has(type)) {

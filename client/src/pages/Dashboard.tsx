@@ -27,10 +27,20 @@ interface Metrics {
   netProfitUSD: number;
 }
 
+interface Opportunity {
+  id: string;
+  tokenPair: string;
+  buyDex: string;
+  sellDex: string;
+  netProfitUSD: number;
+  type: 'cross-exchange' | 'triangular' | 'cross-chain';
+}
+
 export default function Dashboard() {
   const api = useApi();
   const { subscribe, isConnected } = useWebSocket();
   const [liveStatus, setLiveStatus] = useState<ExecutorStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: statusData, refetch: refetchStatus } = useQuery({
     queryKey: ['/api/executor/status'],
@@ -39,7 +49,7 @@ export default function Dashboard() {
 
   const { data: opportunitiesData } = useQuery({
     queryKey: ['/api/opportunities'],
-    queryFn: () => api.get<{ data: { opportunities: unknown[]; count: number } }>('/opportunities'),
+    queryFn: () => api.get<{ data: { opportunities: Opportunity[]; count: number } }>('/opportunities'),
     refetchInterval: 10000,
   });
 
@@ -57,19 +67,23 @@ export default function Dashboard() {
 
   const handleStartExecutor = async () => {
     try {
+      setError(null);
       await api.post('/executor/start');
       refetchStatus();
-    } catch (error) {
-      console.error('Failed to start executor:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to start executor';
+      setError(message);
     }
   };
 
   const handleStopExecutor = async () => {
     try {
+      setError(null);
       await api.post('/executor/stop');
       refetchStatus();
-    } catch (error) {
-      console.error('Failed to stop executor:', error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to stop executor';
+      setError(message);
     }
   };
 
@@ -84,6 +98,24 @@ export default function Dashboard() {
           </span>
         </div>
       </div>
+
+      {/* Error Toast */}
+      {error && (
+        <div
+          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center"
+          role="alert"
+          data-testid="error-toast"
+        >
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-500 hover:text-red-700 font-bold"
+            aria-label="Dismiss error"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* Executor Status */}
       <div className="card">
@@ -172,9 +204,10 @@ export default function Dashboard() {
           </p>
         ) : (
           <div className="space-y-3">
-            {opportunities.slice(0, 5).map((opp: any) => (
+            {opportunities.slice(0, 5).map((opp) => (
               <div
                 key={opp.id}
+                data-testid={`opportunity-${opp.id}`}
                 className="flex justify-between items-center p-4 bg-gray-50 rounded-lg"
               >
                 <div>
