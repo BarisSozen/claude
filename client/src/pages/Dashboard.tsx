@@ -33,12 +33,12 @@ export default function Dashboard() {
   const [liveStatus, setLiveStatus] = useState<ExecutorStatus | null>(null);
 
   const { data: statusData, refetch: refetchStatus } = useQuery({
-    queryKey: ['executor-status'],
+    queryKey: ['/api/executor/status'],
     queryFn: () => api.get<{ data: { executor: ExecutorStatus; metrics: Metrics } }>('/executor/status'),
   });
 
   const { data: opportunitiesData } = useQuery({
-    queryKey: ['opportunities'],
+    queryKey: ['/api/opportunities'],
     queryFn: () => api.get<{ data: { opportunities: unknown[]; count: number } }>('/opportunities'),
     refetchInterval: 10000,
   });

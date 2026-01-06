@@ -12,6 +12,9 @@ import {
   executeTradeSchema,
   tradeHistoryQuerySchema,
   uuidParamSchema,
+  executeOpportunitySchema,
+  type TradeHistoryQuery,
+  type ExecuteOpportunityInput,
 } from '../middleware/validation.js';
 import { tradeLimiter, standardLimiter } from '../middleware/rate-limit.js';
 import { tradeExecutorService } from '../services/trade-executor.js';
@@ -125,7 +128,7 @@ router.get(
   async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const { page, limit, status, protocol, chainId } = req.query as any;
+      const { page, limit, status, protocol, chainId } = req.query as TradeHistoryQuery;
 
       // Get user's delegations
       const delegations = await delegationService.getByUserId(authReq.userId);
@@ -234,18 +237,11 @@ router.get(
 router.post(
   '/execute-opportunity',
   tradeLimiter,
+  validateBody(executeOpportunitySchema),
   async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const { delegationId, opportunityId } = req.body;
-
-      if (!delegationId || !opportunityId) {
-        return res.status(400).json({
-          success: false,
-          error: 'delegationId and opportunityId are required',
-          timestamp: Date.now(),
-        });
-      }
+      const { delegationId, opportunityId } = req.body as ExecuteOpportunityInput;
 
       // Verify delegation ownership
       const delegation = await delegationService.getById(delegationId);

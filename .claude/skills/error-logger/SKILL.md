@@ -5,6 +5,32 @@ description: Structured JSON logging with correlation IDs for multi-service syst
 
 # Error Logger
 
+Structured JSON logging with correlation IDs for multi-service systems.
+
+## When to Use
+
+- Implementing logging infrastructure
+- Debugging failures across services
+- Tracing errors with correlation IDs
+- Adding error handling to operations
+- Reviewing logging patterns
+
+## Workflow
+
+### Step 1: Create Operation Context
+
+Start operation with appropriate prefix (liq_, arb_, quo_, op_).
+
+### Step 2: Log with Context
+
+Include correlation ID in all related log entries.
+
+### Step 3: Propagate Correlation ID
+
+Pass via X-Correlation-ID header across services.
+
+---
+
 ## Log Format
 ```json
 {

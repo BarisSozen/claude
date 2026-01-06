@@ -25,8 +25,8 @@ interface Trade {
 export default function Trades() {
   const api = useApi();
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['trades'],
+  const { data, isPending } = useQuery({
+    queryKey: ['/api/trades/history'],
     queryFn: () => api.get<{ data: { trades: Trade[] } }>('/trades/history'),
     refetchInterval: 30000,
   });
@@ -68,7 +68,7 @@ export default function Trades() {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  if (isLoading) {
+  if (isPending) {
     return <div className="text-center py-8">Loading...</div>;
   }
 

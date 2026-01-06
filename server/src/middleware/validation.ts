@@ -100,6 +100,12 @@ export const executorConfigSchema = z.object({
   enabledStrategies: z.array(z.string()).optional(),
 });
 
+// Execute opportunity schema
+export const executeOpportunitySchema = z.object({
+  delegationId: z.string().uuid('Invalid delegation ID'),
+  opportunityId: z.string().min(1, 'Opportunity ID is required'),
+});
+
 // Type exports
 export type CreateDelegationInput = z.infer<typeof createDelegationSchema>;
 export type UpdateDelegationInput = z.infer<typeof updateDelegationSchema>;
@@ -110,6 +116,7 @@ export type PaginationInput = z.infer<typeof paginationSchema>;
 export type TradeHistoryQuery = z.infer<typeof tradeHistoryQuerySchema>;
 export type OpportunityQuery = z.infer<typeof opportunityQuerySchema>;
 export type ExecutorConfigInput = z.infer<typeof executorConfigSchema>;
+export type ExecuteOpportunityInput = z.infer<typeof executeOpportunitySchema>;
 
 /**
  * Validation middleware factory
@@ -183,3 +190,107 @@ export const uuidParamSchema = z.object({
 export const addressParamSchema = z.object({
   address: addressSchema,
 });
+
+// ============================================
+// Admin & Strategy Schemas
+// ============================================
+
+// Strategy type enum
+export const strategyTypeSchema = z.enum([
+  'cross-exchange',
+  'triangular',
+  'cross-chain',
+  'flash-loan',
+  'liquidation',
+]);
+
+// Risk level enum
+export const riskLevelSchema = z.enum(['low', 'medium', 'high']);
+
+// Create strategy schema
+export const createStrategySchema = z.object({
+  name: z.string().min(1).max(100),
+  type: strategyTypeSchema,
+  description: z.string().optional(),
+  enabled: z.boolean().default(true),
+  config: z
+    .object({
+      minProfitUsd: z.number().nonnegative().optional(),
+      maxGasUsd: z.number().nonnegative().optional(),
+      maxSlippageBps: z.number().int().min(0).max(10000).optional(),
+      allowedDexes: z.array(z.string()).optional(),
+      allowedTokens: z.array(z.string()).optional(),
+      allowedChains: z.array(z.string()).optional(),
+    })
+    .optional()
+    .default({}),
+  riskLevel: riskLevelSchema.default('medium'),
+});
+
+// Update strategy schema
+export const updateStrategySchema = createStrategySchema.partial();
+
+// Strategy metrics query schema
+export const strategyMetricsQuerySchema = z.object({
+  strategyId: z.string().uuid().optional(),
+  period: z.enum(['day', 'week', 'month', 'year', 'ytd', 'all']).default('month'),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+});
+
+// Admin token schema
+export const createAdminTokenSchema = z.object({
+  address: addressSchema,
+  chainId: chainIdSchema,
+  symbol: z.string().min(1).max(20),
+  name: z.string().min(1).max(100),
+  decimals: z.number().int().min(0).max(18),
+  logoUrl: z.string().url().optional(),
+  enabled: z.boolean().default(true),
+});
+
+export const updateAdminTokenSchema = createAdminTokenSchema.partial().omit({
+  address: true,
+  chainId: true,
+});
+
+// Admin protocol schema
+export const protocolTypeSchema = z.enum(['dex', 'lending', 'aggregator', 'bridge']);
+
+export const createAdminProtocolSchema = z.object({
+  name: z.string().min(1).max(100),
+  type: protocolTypeSchema,
+  chainId: chainIdSchema,
+  routerAddress: addressSchema.optional(),
+  factoryAddress: addressSchema.optional(),
+  enabled: z.boolean().default(true),
+  config: z.record(z.unknown()).optional().default({}),
+});
+
+export const updateAdminProtocolSchema = createAdminProtocolSchema.partial();
+
+// Admin chain schema
+export const createAdminChainSchema = z.object({
+  id: z.string().min(1).max(20),
+  name: z.string().min(1).max(100),
+  chainIdNumeric: z.number().int().positive(),
+  rpcUrl: z.string().url().optional(),
+  explorerUrl: z.string().url().optional(),
+  nativeToken: z.string().min(1).max(10),
+  enabled: z.boolean().default(true),
+});
+
+export const updateAdminChainSchema = createAdminChainSchema.partial().omit({
+  id: true,
+});
+
+// Type exports for admin schemas
+export type CreateStrategyInput = z.infer<typeof createStrategySchema>;
+export type UpdateStrategyInput = z.infer<typeof updateStrategySchema>;
+export type StrategyMetricsQuery = z.infer<typeof strategyMetricsQuerySchema>;
+export type CreateAdminTokenInput = z.infer<typeof createAdminTokenSchema>;
+export type UpdateAdminTokenInput = z.infer<typeof updateAdminTokenSchema>;
+export type CreateAdminProtocolInput = z.infer<typeof createAdminProtocolSchema>;
+export type UpdateAdminProtocolInput = z.infer<typeof updateAdminProtocolSchema>;
+export type CreateAdminChainInput = z.infer<typeof createAdminChainSchema>;
+export type UpdateAdminChainInput = z.infer<typeof updateAdminChainSchema>;

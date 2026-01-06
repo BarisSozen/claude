@@ -14,6 +14,7 @@ import {
 } from '../middleware/validation.js';
 import { standardLimiter } from '../middleware/rate-limit.js';
 import { delegationService } from '../services/delegation.js';
+import { logger } from '../utils/structured-logger.js';
 
 const router = Router();
 
@@ -39,7 +40,8 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Create delegation error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'create_delegation_failed', 'Failed to create delegation', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to create delegation',
@@ -64,7 +66,8 @@ router.get('/', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get delegations error:', error);
+    const ctx = logger.startOperation('api');
+    logger.error(ctx, 'get_delegations_failed', 'Failed to fetch delegations', { error: error instanceof Error ? error.message : 'Unknown error' });
     res.status(500).json({
       success: false,
       error: 'Failed to fetch delegations',
@@ -109,7 +112,8 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get delegation error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'get_delegation_failed', 'Failed to fetch delegation', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to fetch delegation',
@@ -151,7 +155,8 @@ router.patch(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Update delegation error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'update_delegation_failed', 'Failed to update delegation', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to update delegation',
@@ -188,12 +193,11 @@ router.delete(
         });
       }
 
-      res.json({
-        success: true,
-        timestamp: Date.now(),
-      });
+      // Return 204 No Content for successful DELETE
+      res.status(204).send();
     } catch (error) {
-      console.error('Revoke delegation error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'revoke_delegation_failed', 'Failed to revoke delegation', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to revoke delegation',
@@ -232,7 +236,8 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get audit history error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'get_audit_history_failed', 'Failed to fetch audit history', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to fetch audit history',
@@ -273,7 +278,8 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Pause delegation error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'pause_delegation_failed', 'Failed to pause delegation', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to pause delegation',
@@ -314,7 +320,8 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Resume delegation error:', error);
+      const ctx = logger.startOperation('api');
+      logger.error(ctx, 'resume_delegation_failed', 'Failed to resume delegation', { error: error instanceof Error ? error.message : 'Unknown error' });
       res.status(500).json({
         success: false,
         error: 'Failed to resume delegation',

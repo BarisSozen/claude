@@ -5,6 +5,36 @@ description: Validates system integration before deployment. Use when checking p
 
 # System Integration Validator
 
+Validates system integration before deployment.
+
+## When to Use
+
+- Pre-deployment validation
+- Checking port availability
+- Verifying database connections
+- Debugging stuck workflows
+- Detecting dead ends or circular dependencies
+
+## Workflow
+
+### Step 1: Check Ports
+
+Verify all required ports are free.
+
+### Step 2: Verify Databases
+
+Test PostgreSQL and Redis connections.
+
+### Step 3: Validate API Contracts
+
+Ensure frontend ↔ backend match.
+
+### Step 4: Analyze Data Flow
+
+Detect dead ends, orphan inputs, bottlenecks.
+
+---
+
 ## Pre-Deployment Checklist
 
 1. **Ports** - All required ports free

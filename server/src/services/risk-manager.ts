@@ -34,7 +34,7 @@ class RiskManagerService {
     maxLossPerHour: 100,      // $100 max loss per hour
     maxLossPerDay: 500,       // $500 max loss per day
     maxConsecutiveLosses: 3,  // Pause after 3 consecutive losses
-    maxSlippagePercent: 5,    // 5% max slippage
+    maxSlippagePercent: 1.5,  // 1.5% max slippage (reduced from 5%)
   };
 
   // Trading state

@@ -2,6 +2,53 @@ import { useAuthStore } from '../store/auth';
 
 const API_BASE = '/api';
 
+// User-friendly error messages - prevent leaking internal server details
+const ERROR_MESSAGES: Record<string, string> = {
+  'Invalid credentials': 'Invalid email or password',
+  'Token expired': 'Your session has expired. Please sign in again',
+  'Unauthorized': 'Please sign in to continue',
+  'Forbidden': 'You do not have permission to perform this action',
+  'Not found': 'The requested resource was not found',
+  'Rate limit exceeded': 'Too many requests. Please try again later',
+};
+
+/**
+ * Sanitize error messages to prevent exposing internal server details
+ */
+function sanitizeErrorMessage(error: string | undefined): string {
+  if (!error) return 'Request failed';
+
+  // Check for known safe error messages
+  for (const [pattern, message] of Object.entries(ERROR_MESSAGES)) {
+    if (error.toLowerCase().includes(pattern.toLowerCase())) {
+      return message;
+    }
+  }
+
+  // Check for potentially sensitive patterns and replace with generic message
+  const sensitivePatterns = [
+    /sql|query|database|postgres|mysql/i,
+    /stack|trace|at\s+\w+\s*\(/i,
+    /internal|server|exception/i,
+    /path|file|directory|\/\w+\//i,
+    /connection|timeout|refused/i,
+    /secret|key|password|token|credential/i,
+  ];
+
+  for (const pattern of sensitivePatterns) {
+    if (pattern.test(error)) {
+      return 'An error occurred. Please try again';
+    }
+  }
+
+  // Return original error if it appears safe (short, no sensitive patterns)
+  if (error.length <= 100 && !error.includes('\n')) {
+    return error;
+  }
+
+  return 'An error occurred. Please try again';
+}
+
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
@@ -34,13 +81,25 @@ export function useApi() {
       });
       clearTimeout(timeoutId);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Request failed');
+      // Handle non-JSON responses gracefully
+      let data: Record<string, unknown>;
+      try {
+        data = await response.json();
+      } catch {
+        // Response was not valid JSON
+        if (!response.ok) {
+          throw new Error('Request failed');
+        }
+        return {} as T;
       }
 
-      return data;
+      if (!response.ok) {
+        // Sanitize error messages - don't expose internal server details
+        const safeError = sanitizeErrorMessage(data.error as string | undefined);
+        throw new Error(safeError);
+      }
+
+      return data as T;
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {

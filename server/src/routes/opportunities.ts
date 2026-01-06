@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.js';
-import { validateQuery, opportunityQuerySchema } from '../middleware/validation.js';
+import { validateQuery, opportunityQuerySchema, type OpportunityQuery } from '../middleware/validation.js';
 import { priceLimiter } from '../middleware/rate-limit.js';
 import { arbitrageService } from '../services/arbitrage.js';
 
@@ -24,7 +24,7 @@ router.get(
   validateQuery(opportunityQuerySchema),
   async (req, res) => {
     try {
-      const { minProfitUsd, type } = req.query as any;
+      const { minProfitUsd, type } = req.query as OpportunityQuery;
 
       let opportunities = arbitrageService.getOpportunities();
 

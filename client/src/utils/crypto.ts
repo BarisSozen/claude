@@ -34,15 +34,25 @@ export function generateSessionKey(): SessionKeyPair {
 /**
  * Derive an encryption key from a signature
  * The user signs a message and we derive an AES key from it
+ *
+ * Security: We hash the full signature with SHA-256 before using it as key material
+ * to ensure we utilize all entropy from the signature and improve security.
  */
 async function deriveKeyFromSignature(signature: Hex): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const signatureBytes = hexToBytes(signature);
 
-  // Import the signature as key material
+  // Hash the full signature for better entropy distribution
+  // This ensures we use all available entropy from the signature
+  // Copy to a fresh ArrayBuffer to satisfy TypeScript's strict BufferSource type
+  const signatureBuffer = new ArrayBuffer(signatureBytes.length);
+  new Uint8Array(signatureBuffer).set(signatureBytes);
+  const hashedSignature = await crypto.subtle.digest('SHA-256', signatureBuffer);
+
+  // Import the hashed signature as key material
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    signatureBytes.slice(0, 32), // Use first 32 bytes
+    hashedSignature,
     { name: 'PBKDF2' },
     false,
     ['deriveBits', 'deriveKey']

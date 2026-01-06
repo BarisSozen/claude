@@ -6,6 +6,8 @@ import Delegations from './pages/Delegations';
 import Opportunities from './pages/Opportunities';
 import Trades from './pages/Trades';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
+import StrategyPerformance from './pages/StrategyPerformance';
 import ConnectWallet from './pages/ConnectWallet';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="delegations" element={<Delegations />} />
           <Route path="opportunities" element={<Opportunities />} />
           <Route path="trades" element={<Trades />} />
+          <Route path="performance" element={<StrategyPerformance />} />
+          <Route path="admin" element={<Admin />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

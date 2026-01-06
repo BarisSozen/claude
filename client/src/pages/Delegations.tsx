@@ -31,24 +31,24 @@ export default function Delegations() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['delegations'],
+  const { data, isPending } = useQuery({
+    queryKey: ['/api/delegations'],
     queryFn: () => api.get<{ data: Delegation[] }>('/delegations'),
   });
 
   const pauseMutation = useMutation({
     mutationFn: (id: string) => api.post(`/delegations/${id}/pause`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['delegations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/delegations'] }),
   });
 
   const resumeMutation = useMutation({
     mutationFn: (id: string) => api.post(`/delegations/${id}/resume`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['delegations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/delegations'] }),
   });
 
   const revokeMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/delegations/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['delegations'] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/delegations'] }),
   });
 
   const delegations = data?.data || [];
@@ -68,7 +68,7 @@ export default function Delegations() {
     );
   };
 
-  if (isLoading) {
+  if (isPending) {
     return <div className="text-center py-8">Loading...</div>;
   }
 

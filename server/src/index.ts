@@ -33,6 +33,8 @@ import tradeRoutes from './routes/trades.js';
 import opportunityRoutes from './routes/opportunities.js';
 import executorRoutes from './routes/executor.js';
 import walletRoutes from './routes/wallet.js';
+import strategyRoutes from './routes/strategies.js';
+import adminRoutes from './routes/admin.js';
 import docsRoutes from './routes/docs.js';
 
 // Create Express app
@@ -164,6 +166,8 @@ app.use('/api/trades', tradeRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/executor', executorRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/strategies', strategyRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/docs', docsRoutes);
 
 // Error handling middleware

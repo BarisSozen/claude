@@ -46,6 +46,25 @@ const envSchema = z.object({
 
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+
+  // gRPC (Rust core connection)
+  GRPC_HOST: z.string().default('localhost'),
+  GRPC_PORT: z.string().default('50051'),
+  GRPC_USE_TLS: z.string().default('false'),
+  GRPC_CA_CERT_PATH: z.string().optional(),
+  GRPC_CLIENT_CERT_PATH: z.string().optional(),
+  GRPC_CLIENT_KEY_PATH: z.string().optional(),
+
+  // MEV Protection
+  FLASHBOTS_SIGNER_KEY: z.string().optional(),
+  BLOXROUTE_API_KEY: z.string().optional(),
+  MEV_PROVIDER: z.enum(['flashbots', 'bloxroute', 'both']).default('flashbots'),
+
+  // Slippage and risk
+  MAX_SLIPPAGE_PERCENT: z.string().default('1.5'),
+  QUOTE_MAX_AGE_SEC: z.string().default('2'),
+  OPPORTUNITY_EXPIRY_SEC: z.string().default('12'),
+  MIN_PROFIT_MULTIPLIER: z.string().default('2'),
 });
 
 // Parse and validate environment
@@ -112,5 +131,26 @@ export const config = {
     minProfitUsd: parseFloat(env.MIN_PROFIT_USD),
     scanIntervalMs: parseInt(env.SCAN_INTERVAL_MS, 10),
     maxDailyTrades: parseInt(env.MAX_DAILY_TRADES, 10),
+  },
+  grpc: {
+    host: env.GRPC_HOST,
+    port: parseInt(env.GRPC_PORT, 10),
+    useTls: env.GRPC_USE_TLS === 'true',
+    caCertPath: env.GRPC_CA_CERT_PATH,
+    clientCertPath: env.GRPC_CLIENT_CERT_PATH,
+    clientKeyPath: env.GRPC_CLIENT_KEY_PATH,
+  },
+  mev: {
+    flashbotsSignerKey: env.FLASHBOTS_SIGNER_KEY,
+    provider: env.MEV_PROVIDER as 'flashbots' | 'bloxroute' | 'both',
+  },
+  bloxroute: {
+    apiKey: env.BLOXROUTE_API_KEY,
+  },
+  slippage: {
+    maxSlippagePercent: parseFloat(env.MAX_SLIPPAGE_PERCENT),
+    quoteMaxAgeSec: parseInt(env.QUOTE_MAX_AGE_SEC, 10),
+    opportunityExpirySec: parseInt(env.OPPORTUNITY_EXPIRY_SEC, 10),
+    minProfitMultiplier: parseFloat(env.MIN_PROFIT_MULTIPLIER),
   },
 } as const;

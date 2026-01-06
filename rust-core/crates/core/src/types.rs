@@ -57,6 +57,7 @@ pub enum DexProtocol {
     SushiSwap,
     Curve,
     Balancer,
+    AaveV3,       // Lending protocol
     Camelot,      // Arbitrum
     Aerodrome,    // Base
     QuickSwap,    // Polygon
@@ -70,6 +71,7 @@ impl DexProtocol {
             DexProtocol::SushiSwap => "sushiswap",
             DexProtocol::Curve => "curve",
             DexProtocol::Balancer => "balancer",
+            DexProtocol::AaveV3 => "aave-v3",
             DexProtocol::Camelot => "camelot",
             DexProtocol::Aerodrome => "aerodrome",
             DexProtocol::QuickSwap => "quickswap",
@@ -83,6 +85,7 @@ impl DexProtocol {
             DexProtocol::SushiSwap => matches!(chain, ChainId::Ethereum | ChainId::Arbitrum | ChainId::Polygon),
             DexProtocol::Curve => matches!(chain, ChainId::Ethereum | ChainId::Arbitrum | ChainId::Polygon),
             DexProtocol::Balancer => matches!(chain, ChainId::Ethereum | ChainId::Arbitrum | ChainId::Polygon),
+            DexProtocol::AaveV3 => true, // Available on all supported chains
             DexProtocol::Camelot => matches!(chain, ChainId::Arbitrum),
             DexProtocol::Aerodrome => matches!(chain, ChainId::Base),
             DexProtocol::QuickSwap => matches!(chain, ChainId::Polygon),
