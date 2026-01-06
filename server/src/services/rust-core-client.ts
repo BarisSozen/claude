@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
 import { config } from '../config/env.js';
+import { structuredLogger } from './logger.js';
 
 // Load proto definition
 const PROTO_PATH = path.resolve(__dirname, '../../../rust-core/proto/defi.proto');
@@ -25,7 +26,14 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   oneofs: true,
 });
 
-const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as any;
+// Type for gRPC package definition - grpc-js uses 'any' internally for dynamic protos
+interface DefiProtoDescriptor {
+  defi: {
+    DefiService: grpc.ServiceClientConstructor;
+  };
+}
+
+const protoDescriptor = grpc.loadPackageDefinition(packageDefinition) as unknown as DefiProtoDescriptor;
 const DefiService = protoDescriptor.defi.DefiService;
 
 // Types matching proto definitions
@@ -197,7 +205,7 @@ export class RustCoreClient extends EventEmitter {
     if (!config.grpc.useTls) {
       // Development mode - warn but allow insecure
       if (config.server.nodeEnv === 'production') {
-        console.warn('[SECURITY] gRPC using insecure credentials in production!');
+        structuredLogger.warn('grpc', 'gRPC using insecure credentials in production');
       }
       return grpc.credentials.createInsecure();
     }
@@ -240,13 +248,13 @@ export class RustCoreClient extends EventEmitter {
 
       this.client.waitForReady(deadline, (err: Error | null) => {
         if (err) {
-          console.error('Failed to connect to Rust core:', err.message);
+          structuredLogger.error('grpc', 'Failed to connect to Rust core', err);
           reject(err);
         } else {
           this.connected = true;
           this.reconnectAttempts = 0;
           this.emit('connected');
-          console.log(`Connected to Rust core at ${address} (TLS: ${config.grpc.useTls})`);
+          structuredLogger.info('grpc', 'Connected to Rust core', { address, tls: config.grpc.useTls });
           resolve();
         }
       });
@@ -299,7 +307,7 @@ export class RustCoreClient extends EventEmitter {
     });
 
     call.on('error', (err: Error) => {
-      console.error('Price stream error:', err);
+      structuredLogger.error('grpc', 'Price stream error', err);
       this.emit('streamError', err);
     });
 
@@ -354,7 +362,7 @@ export class RustCoreClient extends EventEmitter {
     });
 
     call.on('error', (err: Error) => {
-      console.error('Opportunity stream error:', err);
+      structuredLogger.error('grpc', 'Opportunity stream error', err);
       this.emit('streamError', err);
     });
 
@@ -617,9 +625,9 @@ export async function initRustCore(): Promise<RustCoreClient> {
   if (!client.isConnected()) {
     try {
       await client.connect();
-      console.log('Successfully connected to Rust core');
+      structuredLogger.info('grpc', 'Successfully connected to Rust core');
     } catch (error) {
-      console.warn('Failed to connect to Rust core, running in degraded mode:', error);
+      structuredLogger.warn('grpc', 'Failed to connect to Rust core, running in degraded mode', { error });
       // Don't throw - allow TypeScript backend to run without Rust core
     }
   }

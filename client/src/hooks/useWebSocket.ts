@@ -94,8 +94,11 @@ export function useWebSocket() {
       reconnectTimeoutRef.current = null;
     }
 
-    const wsUrl = `ws://${window.location.host}/ws${token ? `?token=${token}` : ''}`;
-    const ws = new WebSocket(wsUrl);
+    // Use subprotocol for authentication (more secure than URL query params)
+    // Tokens in URLs can be logged and leaked via Referer headers
+    const wsUrl = `ws://${window.location.host}/ws`;
+    const protocols = token ? ['defi-bot', `auth-token-${token}`] : ['defi-bot'];
+    const ws = new WebSocket(wsUrl, protocols);
 
     ws.onopen = () => {
       setIsConnected(true);
