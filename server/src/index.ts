@@ -10,6 +10,9 @@ import compression from 'compression';
 import { createServer } from 'http';
 import * as dotenv from 'dotenv';
 
+// Import type extensions for Express
+import './types/express.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -25,6 +28,7 @@ import { structuredLogger } from './services/logger.js';
 import { redisService } from './services/redis.js';
 import { metricsService } from './services/metrics.js';
 import { rpcProvider } from './services/rpc-provider.js';
+import { tracingService } from './services/tracing.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -52,6 +56,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '1mb' }));
 
+// Distributed tracing middleware
+app.use(tracingService.expressMiddleware());
+
 // Request correlation ID middleware
 app.use((req, res, next) => {
   const correlationId = req.headers['x-correlation-id'] as string ||
@@ -59,7 +66,7 @@ app.use((req, res, next) => {
     `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   res.setHeader('x-correlation-id', correlationId);
-  (req as any).correlationId = correlationId;
+  req.correlationId = correlationId;
   next();
 });
 
@@ -69,7 +76,7 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const correlationId = (req as any).correlationId;
+    const correlationId = req.correlationId;
 
     // Log request
     structuredLogger.http(req.method, req.path, res.statusCode, duration, {
@@ -172,7 +179,7 @@ app.use('/api/docs', docsRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const correlationId = (req as any).correlationId;
+  const correlationId = req.correlationId;
 
   structuredLogger.error('system', 'Unhandled error', err, {
     correlationId,
@@ -244,6 +251,7 @@ const shutdown = async (signal: string) => {
   // Shutdown services
   websocketService.shutdown();
   rpcProvider.shutdown();
+  await tracingService.shutdown();
   await structuredLogger.shutdown();
   await redisService.disconnect();
   await closeDatabaseConnection();

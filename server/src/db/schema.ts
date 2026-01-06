@@ -95,6 +95,8 @@ export const trades = pgTable('trades', {
   delegationIdIdx: index('trades_delegation_id_idx').on(table.delegationId),
   statusIdx: index('trades_status_idx').on(table.status),
   createdAtIdx: index('trades_created_at_idx').on(table.createdAt),
+  protocolIdx: index('trades_protocol_idx').on(table.protocol),
+  chainIdIdx: index('trades_chain_id_idx').on(table.chainId),
 }));
 
 // Delegation audits table

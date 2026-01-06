@@ -76,6 +76,36 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+// Security validation for production
+const INSECURE_KEY_PATTERNS = [
+  '0'.repeat(64),                    // All zeros
+  '1'.repeat(64),                    // All ones
+  'a'.repeat(64),                    // All a's
+  'f'.repeat(64),                    // All f's
+  '0123456789abcdef'.repeat(4),      // Sequential pattern
+];
+
+function isInsecureKey(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  return INSECURE_KEY_PATTERNS.some(pattern => lowerKey === pattern);
+}
+
+// Validate encryption key security in production
+if (parsed.data.NODE_ENV === 'production') {
+  if (isInsecureKey(parsed.data.ENCRYPTION_KEY)) {
+    console.error('❌ SECURITY ERROR: Insecure encryption key detected!');
+    console.error('   The encryption key appears to be a placeholder or weak key.');
+    console.error('   Generate a secure key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    process.exit(1);
+  }
+
+  // Check for TLS on gRPC in production
+  if (parsed.data.GRPC_USE_TLS !== 'true') {
+    console.warn('⚠️  WARNING: gRPC is not using TLS in production mode.');
+    console.warn('   Consider enabling TLS for secure communication with Rust core.');
+  }
+}
+
 export const env = parsed.data;
 
 // Chain-specific RPC URLs

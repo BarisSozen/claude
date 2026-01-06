@@ -156,7 +156,9 @@ export function validateQuery<T extends z.ZodType>(schema: T) {
       });
     }
 
-    req.query = result.data as any;
+    // Type assertion needed: Zod validated data doesn't match Express's ParsedQs type
+    // This is safe because we've validated the data with Zod
+    req.query = result.data as unknown as typeof req.query;
     next();
   };
 }
@@ -177,7 +179,9 @@ export function validateParams<T extends z.ZodType>(schema: T) {
       });
     }
 
-    req.params = result.data as any;
+    // Type assertion needed: Zod validated data doesn't match Express's ParamsDictionary
+    // This is safe because we've validated the data with Zod
+    req.params = result.data as unknown as typeof req.params;
     next();
   };
 }

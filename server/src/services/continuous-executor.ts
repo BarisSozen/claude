@@ -7,6 +7,7 @@ import { arbitrageService } from './arbitrage.js';
 import { riskManagerService } from './risk-manager.js';
 import { delegationService } from './delegation.js';
 import { config } from '../config/env.js';
+import { structuredLogger } from './logger.js';
 import type { ChainId, ArbitrageOpportunity, ExecutorStatus, ExecutorConfig } from '../../shared/schema.js';
 
 interface ExecutorMetrics {
@@ -65,7 +66,7 @@ class ContinuousExecutorService {
    */
   async start(delegationId?: string): Promise<void> {
     if (this.isRunning) {
-      console.log('[EXECUTOR] Already running');
+      structuredLogger.info('executor', 'Already running');
       return;
     }
 
@@ -82,7 +83,7 @@ class ContinuousExecutorService {
     this.metrics.startTime = new Date();
     this.resetDailyCounters();
 
-    console.log('[EXECUTOR] Starting continuous executor');
+    structuredLogger.info('executor', 'Starting continuous executor');
     this.notifyStatusChange();
 
     // Start scan loop
@@ -104,7 +105,7 @@ class ContinuousExecutorService {
       this.scanTimeoutId = null;
     }
 
-    console.log('[EXECUTOR] Stopped');
+    structuredLogger.info('executor', 'Stopped');
     this.notifyStatusChange();
   }
 
@@ -116,7 +117,7 @@ class ContinuousExecutorService {
       try {
         await this.executeScanCycle();
       } catch (error) {
-        console.error('[EXECUTOR] Scan cycle error:', error);
+        structuredLogger.error('executor', 'Scan cycle error', error as Error);
       }
 
       // Wait for next scan
@@ -130,14 +131,14 @@ class ContinuousExecutorService {
   private async executeScanCycle(): Promise<void> {
     // Check if trading is allowed
     if (riskManagerService.isCircuitBreakerTriggered()) {
-      console.log('[EXECUTOR] Circuit breaker active, skipping scan');
+      structuredLogger.info('executor', 'Circuit breaker active, skipping scan');
       return;
     }
 
     // Check daily trade limit
     this.resetDailyCountersIfNeeded();
     if (this.dailyTradeCount >= this.maxDailyTrades) {
-      console.log('[EXECUTOR] Daily trade limit reached, skipping scan');
+      structuredLogger.info('executor', 'Daily trade limit reached, skipping scan');
       return;
     }
 
@@ -174,7 +175,7 @@ class ContinuousExecutorService {
    */
   private async executeOpportunity(opportunity: ArbitrageOpportunity): Promise<void> {
     if (!this.activeDelegationId) {
-      console.log('[EXECUTOR] No active delegation, skipping execution');
+      structuredLogger.info('executor', 'No active delegation, skipping execution');
       return;
     }
 
@@ -193,11 +194,11 @@ class ContinuousExecutorService {
     );
 
     if (!riskAssessment.approved) {
-      console.log(`[EXECUTOR] Trade rejected: ${riskAssessment.blockers.join(', ')}`);
+      structuredLogger.info('executor', 'Trade rejected', { blockers: riskAssessment.blockers });
       return;
     }
 
-    console.log(`[EXECUTOR] Executing opportunity ${opportunity.id}`);
+    structuredLogger.info('executor', 'Executing opportunity', { opportunityId: opportunity.id });
     this.metrics.totalTrades++;
     this.dailyTradeCount++;
 
@@ -211,15 +212,15 @@ class ContinuousExecutorService {
         this.metrics.successfulTrades++;
         this.metrics.totalProfitUSD += opportunity.netProfitUSD;
         riskManagerService.recordTradeResult(opportunity.netProfitUSD);
-        console.log(`[EXECUTOR] Trade successful: +$${opportunity.netProfitUSD.toFixed(4)}`);
+        structuredLogger.info('executor', 'Trade successful', { profit: opportunity.netProfitUSD });
       } else {
         this.metrics.failedTrades++;
         riskManagerService.recordTradeResult(-opportunity.gasEstimateUSD);
-        console.log(`[EXECUTOR] Trade failed: ${result.error}`);
+        structuredLogger.warn('executor', 'Trade failed', { error: result.error });
       }
     } catch (error) {
       this.metrics.failedTrades++;
-      console.error('[EXECUTOR] Execution error:', error);
+      structuredLogger.error('executor', 'Execution error', error as Error);
     }
   }
 
@@ -311,7 +312,7 @@ class ContinuousExecutorService {
       try {
         callback(status);
       } catch (error) {
-        console.error('[EXECUTOR] Status callback error:', error);
+        structuredLogger.error('executor', 'Status callback error', error as Error);
       }
     }
   }
@@ -324,7 +325,7 @@ class ContinuousExecutorService {
       try {
         callback(opportunity);
       } catch (error) {
-        console.error('[EXECUTOR] Opportunity callback error:', error);
+        structuredLogger.error('executor', 'Opportunity callback error', error as Error);
       }
     }
   }

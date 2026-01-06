@@ -360,7 +360,7 @@ export class LiquidityDepthAnalyzer {
   }
 
   /**
-   * Calculate slippage analysis for a trade
+   * Calculate slippage analysis for a trade using safe BigInt arithmetic
    */
   private calculateSlippageAnalysis(
     amountIn: bigint,
@@ -370,13 +370,32 @@ export class LiquidityDepthAnalyzer {
     decimalsIn: number,
     decimalsOut: number
   ): SlippageAnalysis {
-    // Calculate theoretical output at spot price
-    const normalizedIn = Number(amountIn) / Math.pow(10, decimalsIn);
-    const theoreticalOutput = BigInt(
-      Math.floor(normalizedIn / spotPrice * Math.pow(10, decimalsOut))
-    );
+    // Calculate theoretical output at spot price using safe BigInt math
+    // theoreticalOutput = amountIn / spotPrice (adjusted for decimals)
 
-    // Slippage from theoretical
+    // Convert spotPrice to a BigInt ratio (scaled by 1e18)
+    const spotPriceScaled = BigInt(Math.floor(spotPrice * 1e18));
+
+    // Calculate theoretical output using BigInt arithmetic
+    let theoreticalOutput: bigint;
+    if (spotPriceScaled === 0n) {
+      theoreticalOutput = 0n;
+    } else {
+      // Normalize amountIn to 18 decimals
+      const amountInNormalized = decimalsIn < 18
+        ? amountIn * (10n ** BigInt(18 - decimalsIn))
+        : amountIn / (10n ** BigInt(decimalsIn - 18));
+
+      // Calculate: (amountInNormalized * 1e18) / spotPriceScaled
+      const theoreticalNormalized = (amountInNormalized * (10n ** 18n)) / spotPriceScaled;
+
+      // Adjust from 18 decimals to decimalsOut
+      theoreticalOutput = decimalsOut < 18
+        ? theoreticalNormalized / (10n ** BigInt(18 - decimalsOut))
+        : theoreticalNormalized * (10n ** BigInt(decimalsOut - 18));
+    }
+
+    // Slippage from theoretical (safe - result is always small bps value)
     const slippageBps = theoreticalOutput > 0n
       ? Number((theoreticalOutput - expectedOutput) * 10000n / theoreticalOutput)
       : priceImpactBps;

@@ -5,6 +5,7 @@
 
 import { createClient, type RedisClientType } from 'redis';
 import { config } from '../config/env.js';
+import { structuredLogger } from './logger.js';
 
 export interface SessionData {
   userId: string;
@@ -42,7 +43,7 @@ class RedisService {
         socket: {
           reconnectStrategy: (retries) => {
             if (retries > 10) {
-              console.error('[REDIS] Max reconnection attempts reached');
+              structuredLogger.error('redis', 'Max reconnection attempts reached', null, { retries });
               return new Error('Max reconnection attempts reached');
             }
             return Math.min(retries * 100, 3000);
@@ -51,23 +52,23 @@ class RedisService {
       });
 
       this.client.on('error', (err) => {
-        console.error('[REDIS] Connection error:', err);
+        structuredLogger.error('redis', 'Connection error', err as Error);
         this.isConnected = false;
       });
 
       this.client.on('connect', () => {
-        console.log('[REDIS] Connected');
+        structuredLogger.info('redis', 'Connected');
         this.isConnected = true;
       });
 
       this.client.on('disconnect', () => {
-        console.log('[REDIS] Disconnected');
+        structuredLogger.warn('redis', 'Disconnected');
         this.isConnected = false;
       });
 
       await this.client.connect();
     } catch (error) {
-      console.error('[REDIS] Failed to connect:', error);
+      structuredLogger.error('redis', 'Failed to connect', error as Error);
       this.connectionPromise = null;
       throw error;
     }

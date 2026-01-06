@@ -214,7 +214,8 @@ export type WSEventType =
   | 'trade:executed'
   | 'balance:update'
   | 'error'
-  | 'executor:status';
+  | 'executor:status'
+  | 'pong';
 
 export interface WSEvent<T = unknown> {
   type: WSEventType;

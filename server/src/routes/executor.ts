@@ -4,12 +4,19 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import { validateBody, executorConfigSchema } from '../middleware/validation.js';
+import { structuredLogger } from '../services/logger.js';
 import { standardLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { continuousExecutorService } from '../services/continuous-executor.js';
+import { structuredLogger } from '../services/logger.js';
 import { delegationService } from '../services/delegation.js';
+import { structuredLogger } from '../services/logger.js';
 import { riskManagerService } from '../services/risk-manager.js';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -36,7 +43,7 @@ router.get('/status', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get executor status error:', error);
+    structuredLogger.error('executor', 'Get executor status failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to get executor status',
@@ -78,7 +85,7 @@ router.post('/start', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Start executor error:', error);
+    structuredLogger.error('executor', 'Start executor failed', error as Error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to start executor',
@@ -103,7 +110,7 @@ router.post('/stop', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Stop executor error:', error);
+    structuredLogger.error('executor', 'Stop executor failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to stop executor',
@@ -132,7 +139,7 @@ router.patch(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Update executor config error:', error);
+      structuredLogger.error('executor', 'Update executor config failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to update config',
@@ -183,7 +190,7 @@ router.post('/delegation', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Set delegation error:', error);
+    structuredLogger.error('executor', 'Set delegation failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to set delegation',
@@ -206,7 +213,7 @@ router.get('/metrics', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get metrics error:', error);
+    structuredLogger.error('executor', 'Get metrics failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to get metrics',
@@ -233,7 +240,7 @@ router.post('/risk/pause', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Pause trading error:', error);
+    structuredLogger.error('executor', 'Pause trading failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to pause trading',
@@ -258,7 +265,7 @@ router.post('/risk/resume', standardLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Resume trading error:', error);
+    structuredLogger.error('executor', 'Resume trading failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to resume trading',

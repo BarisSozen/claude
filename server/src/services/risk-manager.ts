@@ -7,6 +7,7 @@ import { formatUnits, type Address } from 'viem';
 import { priceOracleService } from './price-oracle.js';
 import { delegationService } from './delegation.js';
 import { config } from '../config/env.js';
+import { structuredLogger } from './logger.js';
 import type { ChainId, SwapQuote, TradeParams } from '../../shared/schema.js';
 import { TOKEN_DECIMALS } from '../../shared/schema.js';
 
@@ -267,7 +268,7 @@ class RiskManagerService {
    */
   pauseTrading(reason: string): void {
     this.tradingPaused = true;
-    console.warn(`[RISK] Trading paused: ${reason}`);
+    structuredLogger.warn('risk', 'Trading paused', { reason });
   }
 
   /**
@@ -276,7 +277,7 @@ class RiskManagerService {
   resumeTrading(): void {
     this.tradingPaused = false;
     this.consecutiveLosses = 0;
-    console.info('[RISK] Trading resumed');
+    structuredLogger.info('risk', 'Trading resumed');
   }
 
   /**
@@ -284,7 +285,7 @@ class RiskManagerService {
    */
   pauseStrategy(strategyId: string): void {
     this.pausedStrategies.add(strategyId);
-    console.warn(`[RISK] Strategy paused: ${strategyId}`);
+    structuredLogger.warn('risk', 'Strategy paused', { strategyId });
   }
 
   /**
@@ -292,7 +293,7 @@ class RiskManagerService {
    */
   resumeStrategy(strategyId: string): void {
     this.pausedStrategies.delete(strategyId);
-    console.info(`[RISK] Strategy resumed: ${strategyId}`);
+    structuredLogger.info('risk', 'Strategy resumed', { strategyId });
   }
 
   /**

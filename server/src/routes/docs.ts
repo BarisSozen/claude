@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
