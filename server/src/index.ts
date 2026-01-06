@@ -28,6 +28,7 @@ import { structuredLogger } from './services/logger.js';
 import { redisService } from './services/redis.js';
 import { metricsService } from './services/metrics.js';
 import { rpcProvider } from './services/rpc-provider.js';
+import { tracingService } from './services/tracing.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -54,6 +55,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
+
+// Distributed tracing middleware
+app.use(tracingService.expressMiddleware());
 
 // Request correlation ID middleware
 app.use((req, res, next) => {
@@ -247,6 +251,7 @@ const shutdown = async (signal: string) => {
   // Shutdown services
   websocketService.shutdown();
   rpcProvider.shutdown();
+  await tracingService.shutdown();
   await structuredLogger.shutdown();
   await redisService.disconnect();
   await closeDatabaseConnection();

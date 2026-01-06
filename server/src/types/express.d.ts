@@ -23,6 +23,18 @@ declare global {
        * Added by auth middleware
        */
       walletAddress?: string;
+
+      /**
+       * Distributed trace ID from OpenTelemetry
+       * Added by tracing middleware
+       */
+      traceId?: string;
+
+      /**
+       * Current span ID from OpenTelemetry
+       * Added by tracing middleware
+       */
+      spanId?: string;
     }
   }
 }
