@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import {
   createNonce,
   verifySiweSignature,
@@ -17,6 +18,7 @@ import {
   siweVerifySchema,
 } from '../middleware/validation.js';
 import { authLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -39,7 +41,7 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Nonce generation error:', error);
+      structuredLogger.error('auth', 'Nonce generation failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to generate nonce',
@@ -90,7 +92,7 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Verification error:', error);
+      structuredLogger.error('auth', 'Verification failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Verification failed',

@@ -4,7 +4,9 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import {
   validateBody,
   validateParams,
@@ -13,8 +15,11 @@ import {
   uuidParamSchema,
 } from '../middleware/validation.js';
 import { standardLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { delegationService } from '../services/delegation.js';
+import { structuredLogger } from '../services/logger.js';
 import { logger } from '../utils/structured-logger.js';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 

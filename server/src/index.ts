@@ -10,6 +10,9 @@ import compression from 'compression';
 import { createServer } from 'http';
 import * as dotenv from 'dotenv';
 
+// Import type extensions for Express
+import './types/express.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -59,7 +62,7 @@ app.use((req, res, next) => {
     `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   res.setHeader('x-correlation-id', correlationId);
-  (req as any).correlationId = correlationId;
+  req.correlationId = correlationId;
   next();
 });
 
@@ -69,7 +72,7 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const correlationId = (req as any).correlationId;
+    const correlationId = req.correlationId;
 
     // Log request
     structuredLogger.http(req.method, req.path, res.statusCode, duration, {
@@ -172,7 +175,7 @@ app.use('/api/docs', docsRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const correlationId = (req as any).correlationId;
+  const correlationId = req.correlationId;
 
   structuredLogger.error('system', 'Unhandled error', err, {
     correlationId,

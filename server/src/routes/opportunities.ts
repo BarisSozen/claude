@@ -4,10 +4,15 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import { validateQuery, opportunityQuerySchema, type OpportunityQuery } from '../middleware/validation.js';
+import { structuredLogger } from '../services/logger.js';
 import { priceLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { arbitrageService } from '../services/arbitrage.js';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -59,7 +64,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get opportunities error:', error);
+      structuredLogger.error('opportunities', 'Get opportunities failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch opportunities',
@@ -101,7 +106,7 @@ router.get('/:id', priceLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get opportunity error:', error);
+    structuredLogger.error('opportunities', 'Get opportunity failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch opportunity',
@@ -133,7 +138,7 @@ router.post('/scan', priceLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Scan opportunities error:', error);
+    structuredLogger.error('opportunities', 'Scan opportunities failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to scan for opportunities',

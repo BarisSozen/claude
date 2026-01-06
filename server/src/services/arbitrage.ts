@@ -19,6 +19,7 @@ import { db, arbitrageOpportunities } from '../db/index.js';
 import { eq, and, gt, lt } from 'drizzle-orm';
 import { config } from '../config/env.js';
 import { generateId } from './encryption.js';
+import { structuredLogger } from './logger.js';
 import type {
   ChainId,
   ArbitrageOpportunity,
@@ -282,7 +283,7 @@ class ArbitrageService {
     );
 
     if (!priceValidation.isValid) {
-      console.warn(`Price manipulation detected: ${priceValidation.deviation.toFixed(2)}% deviation`);
+      structuredLogger.warn('arbitrage', 'Price manipulation detected', { deviation: priceValidation.deviation });
       return null;
     }
 
@@ -482,7 +483,7 @@ class ArbitrageService {
 
       return opportunity;
     } catch (error) {
-      console.error('Triangular arbitrage scan failed:', error);
+      structuredLogger.error('arbitrage', 'Triangular arbitrage scan failed', error as Error);
       return null;
     }
   }
@@ -525,7 +526,7 @@ class ArbitrageService {
           this.notifyOpportunity(opp);
         }
       } catch (error) {
-        console.error(`Cross-exchange scan failed for ${pair.name}:`, error);
+        structuredLogger.error('arbitrage', 'Cross-exchange scan failed', error as Error, { pair: pair.name });
       }
     }
 
@@ -550,7 +551,7 @@ class ArbitrageService {
           this.notifyOpportunity(opp);
         }
       } catch (error) {
-        console.error(`Triangular scan failed for ${path.name}:`, error);
+        structuredLogger.error('arbitrage', 'Triangular scan failed', error as Error, { path: path.name });
       }
     }
 
@@ -725,7 +726,7 @@ class ArbitrageService {
     delegationId: string,
     opportunity: ArbitrageOpportunity
   ): Promise<TradeResult> {
-    console.warn('Executing without MEV protection - vulnerable to sandwich attacks');
+    structuredLogger.warn('arbitrage', 'Executing without MEV protection - vulnerable to sandwich attacks');
 
     for (const step of opportunity.executionPath) {
       const result = await tradeExecutorService.executeUniswapV3Swap(
@@ -777,7 +778,7 @@ class ArbitrageService {
       try {
         callback(opp);
       } catch (error) {
-        console.error('Opportunity callback error:', error);
+        structuredLogger.error('arbitrage', 'Opportunity callback error', error as Error);
       }
     }
   }

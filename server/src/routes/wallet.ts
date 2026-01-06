@@ -4,13 +4,21 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import { validateParams, validateQuery, addressParamSchema, chainIdSchema } from '../middleware/validation.js';
+import { structuredLogger } from '../services/logger.js';
 import { standardLimiter, priceLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { walletService } from '../services/wallet.js';
+import { structuredLogger } from '../services/logger.js';
 import { priceOracleService } from '../services/price-oracle.js';
+import { structuredLogger } from '../services/logger.js';
 import type { Address, ChainId } from '../../shared/schema.js';
+import { structuredLogger } from '../services/logger.js';
 import { z } from 'zod';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -51,7 +59,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get balance error:', error);
+      structuredLogger.error('wallet', 'Get balance failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch balance',
@@ -85,7 +93,7 @@ router.get('/balance/all', priceLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get all balances error:', error);
+    structuredLogger.error('wallet', 'Get all balances failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch balances',
@@ -124,7 +132,7 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Refresh balance error:', error);
+      structuredLogger.error('wallet', 'Refresh balance failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to refresh balance',
@@ -171,7 +179,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get price error:', error);
+      structuredLogger.error('wallet', 'Get price failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch price',
@@ -229,7 +237,7 @@ router.get('/quote', priceLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get quote error:', error);
+    structuredLogger.error('wallet', 'Get quote failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch quote',
@@ -257,7 +265,7 @@ router.get('/eth-price', priceLimiter, async (req, res) => {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get ETH price error:', error);
+    structuredLogger.error('wallet', 'Get ETH price failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch ETH price',

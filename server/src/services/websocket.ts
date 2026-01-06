@@ -10,6 +10,7 @@ import { priceOracleService } from './price-oracle.js';
 import { arbitrageService } from './arbitrage.js';
 import { walletService } from './wallet.js';
 import { continuousExecutorService } from './continuous-executor.js';
+import { structuredLogger } from './logger.js';
 import type { WSEvent, WSEventType, Address, ChainId } from '../../shared/schema.js';
 
 interface AuthenticatedWebSocket extends WebSocket {
@@ -62,7 +63,7 @@ class WebSocketService {
       });
 
       client.on('error', (error) => {
-        console.error('WebSocket error:', error);
+        structuredLogger.error('websocket', 'Client error', error as Error);
         this.clients.delete(client);
       });
 
@@ -94,7 +95,7 @@ class WebSocketService {
     // Subscribe to service events
     this.setupServiceSubscriptions();
 
-    console.log('[WS] WebSocket server initialized');
+    structuredLogger.info('websocket', 'WebSocket server initialized');
   }
 
   /**
@@ -148,14 +149,14 @@ class WebSocketService {
           break;
 
         case 'ping':
-          this.send(client, { type: 'pong' as any, payload: {}, timestamp: Date.now() });
+          this.send(client, { type: 'pong', payload: {}, timestamp: Date.now() });
           break;
 
         default:
-          console.warn('[WS] Unknown message type:', message.type);
+          structuredLogger.warn('websocket', 'Unknown message type', { type: message.type });
       }
     } catch (error) {
-      console.error('[WS] Message parse error:', error);
+      structuredLogger.error('websocket', 'Message parse error', error as Error);
     }
   }
 
@@ -316,7 +317,7 @@ class WebSocketService {
       this.wss.close();
     }
 
-    console.log('[WS] WebSocket server shutdown');
+    structuredLogger.info('websocket', 'WebSocket server shutdown');
   }
 }
 

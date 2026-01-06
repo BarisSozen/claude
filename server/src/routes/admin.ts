@@ -4,7 +4,9 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import {
   validateBody,
   validateQuery,
@@ -26,9 +28,13 @@ import {
   type UpdateAdminChainInput,
 } from '../middleware/validation.js';
 import { standardLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { db, adminTokens, adminProtocols, adminChains } from '../db/index.js';
+import { structuredLogger } from '../services/logger.js';
 import { eq, and, desc, sql } from 'drizzle-orm';
+import { structuredLogger } from '../services/logger.js';
 import { z } from 'zod';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -85,7 +91,7 @@ router.get('/tokens', standardLimiter, validateQuery(tokenQuerySchema), async (r
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get tokens error:', error);
+    structuredLogger.error('admin', 'Get tokens failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch tokens',
@@ -120,7 +126,7 @@ router.get('/tokens/:id', standardLimiter, validateParams(uuidParamSchema), asyn
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get token error:', error);
+    structuredLogger.error('admin', 'Get token failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch token',
@@ -176,7 +182,7 @@ router.post('/tokens', standardLimiter, validateBody(createAdminTokenSchema), as
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Create token error:', error);
+    structuredLogger.error('admin', 'Create token failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to create token',
@@ -225,7 +231,7 @@ router.patch(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Update token error:', error);
+      structuredLogger.error('admin', 'Update token failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to update token',
@@ -257,7 +263,7 @@ router.delete('/tokens/:id', standardLimiter, validateParams(uuidParamSchema), a
     // Return 204 No Content for successful DELETE
     res.status(204).send();
   } catch (error) {
-    console.error('Delete token error:', error);
+    structuredLogger.error('admin', 'Delete token failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete token',
@@ -319,7 +325,7 @@ router.get('/protocols', standardLimiter, validateQuery(protocolQuerySchema), as
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get protocols error:', error);
+    structuredLogger.error('admin', 'Get protocols failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch protocols',
@@ -358,7 +364,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get protocol error:', error);
+      structuredLogger.error('admin', 'Get protocol failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch protocol',
@@ -399,7 +405,7 @@ router.post(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Create protocol error:', error);
+      structuredLogger.error('admin', 'Create protocol failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to create protocol',
@@ -451,7 +457,7 @@ router.patch(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Update protocol error:', error);
+      structuredLogger.error('admin', 'Update protocol failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to update protocol',
@@ -487,7 +493,7 @@ router.delete(
       // Return 204 No Content for successful DELETE
       res.status(204).send();
     } catch (error) {
-      console.error('Delete protocol error:', error);
+      structuredLogger.error('admin', 'Delete protocol failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to delete protocol',
@@ -533,7 +539,7 @@ router.get('/chains', standardLimiter, validateQuery(paginationSchema), async (r
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get chains error:', error);
+    structuredLogger.error('admin', 'Get chains failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch chains',
@@ -568,7 +574,7 @@ router.get('/chains/:id', standardLimiter, validateParams(chainIdParamSchema), a
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get chain error:', error);
+    structuredLogger.error('admin', 'Get chain failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch chain',
@@ -619,7 +625,7 @@ router.post('/chains', standardLimiter, validateBody(createAdminChainSchema), as
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Create chain error:', error);
+    structuredLogger.error('admin', 'Create chain failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to create chain',
@@ -669,7 +675,7 @@ router.patch(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Update chain error:', error);
+      structuredLogger.error('admin', 'Update chain failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to update chain',
@@ -705,7 +711,7 @@ router.delete(
       // Return 204 No Content for successful DELETE
       res.status(204).send();
     } catch (error) {
-      console.error('Delete chain error:', error);
+      structuredLogger.error('admin', 'Delete chain failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to delete chain',

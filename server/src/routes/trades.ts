@@ -4,7 +4,9 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import {
   validateBody,
   validateQuery,
@@ -17,13 +19,21 @@ import {
   type ExecuteOpportunityInput,
 } from '../middleware/validation.js';
 import { tradeLimiter, standardLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { tradeExecutorService } from '../services/trade-executor.js';
+import { structuredLogger } from '../services/logger.js';
 import { delegationService } from '../services/delegation.js';
+import { structuredLogger } from '../services/logger.js';
 import { arbitrageService } from '../services/arbitrage.js';
+import { structuredLogger } from '../services/logger.js';
 import { riskManagerService } from '../services/risk-manager.js';
+import { structuredLogger } from '../services/logger.js';
 import { db, trades } from '../db/index.js';
+import { structuredLogger } from '../services/logger.js';
 import { eq, and, desc } from 'drizzle-orm';
+import { structuredLogger } from '../services/logger.js';
 import type { ChainId } from '../../shared/schema.js';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -107,7 +117,7 @@ router.post(
         });
       }
     } catch (error) {
-      console.error('Execute trade error:', error);
+      structuredLogger.error('trades', 'Execute trade failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to execute trade',
@@ -167,7 +177,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get trade history error:', error);
+      structuredLogger.error('trades', 'Get trade history failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch trade history',
@@ -220,7 +230,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get trade error:', error);
+      structuredLogger.error('trades', 'Get trade failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch trade',
@@ -276,7 +286,7 @@ router.post(
         });
       }
     } catch (error) {
-      console.error('Execute opportunity error:', error);
+      structuredLogger.error('trades', 'Execute opportunity failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to execute opportunity',

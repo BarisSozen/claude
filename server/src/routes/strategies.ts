@@ -4,7 +4,9 @@
  */
 
 import { Router } from 'express';
+import { structuredLogger } from '../services/logger.js';
 import { authMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { structuredLogger } from '../services/logger.js';
 import {
   validateBody,
   validateQuery,
@@ -19,8 +21,11 @@ import {
   type StrategyMetricsQuery,
 } from '../middleware/validation.js';
 import { standardLimiter } from '../middleware/rate-limit.js';
+import { structuredLogger } from '../services/logger.js';
 import { db, strategies, strategySnapshots } from '../db/index.js';
+import { structuredLogger } from '../services/logger.js';
 import { eq, desc, and, gte, lte, sql } from 'drizzle-orm';
+import { structuredLogger } from '../services/logger.js';
 
 const router = Router();
 
@@ -55,7 +60,7 @@ router.get('/', standardLimiter, validateQuery(paginationSchema), async (req, re
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get strategies error:', error);
+    structuredLogger.error('strategies', 'Get strategies failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch strategies',
@@ -90,7 +95,7 @@ router.get('/:id', standardLimiter, validateParams(uuidParamSchema), async (req,
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Get strategy error:', error);
+    structuredLogger.error('strategies', 'Get strategy failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch strategy',
@@ -125,7 +130,7 @@ router.post('/', standardLimiter, validateBody(createStrategySchema), async (req
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('Create strategy error:', error);
+    structuredLogger.error('strategies', 'Create strategy failed', error as Error);
     if ((error as Error).message?.includes('unique')) {
       return res.status(409).json({
         success: false,
@@ -177,7 +182,7 @@ router.patch(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Update strategy error:', error);
+      structuredLogger.error('strategies', 'Update strategy failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to update strategy',
@@ -209,7 +214,7 @@ router.delete('/:id', standardLimiter, validateParams(uuidParamSchema), async (r
     // Return 204 No Content for successful DELETE
     res.status(204).send();
   } catch (error) {
-    console.error('Delete strategy error:', error);
+    structuredLogger.error('strategies', 'Delete strategy failed', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to delete strategy',
@@ -278,7 +283,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get metrics summary error:', error);
+      structuredLogger.error('strategies', 'Get metrics summary failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch metrics summary',
@@ -394,7 +399,7 @@ router.get(
         timestamp: Date.now(),
       });
     } catch (error) {
-      console.error('Get strategy metrics error:', error);
+      structuredLogger.error('strategies', 'Get strategy metrics failed', error as Error);
       res.status(500).json({
         success: false,
         error: 'Failed to fetch strategy metrics',
